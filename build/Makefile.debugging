@@ -1,0 +1,56 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#
+# void debug(variables, indent = "")
+#
+define debug
+    $(if $(__verbose),\
+        $(foreach v,$(1),$(info $(empty)$(2)$(v) = $($(v)))))
+endef
+
+#
+# void display_product_config(product)
+#
+define display_product_config
+    $(info )
+    $(info Product $(1))
+    $(call display_config,$(empty),$(1))
+endef
+
+#
+# void display_config(indent, prefix)
+#
+define display_config
+    $(call assign,__$(2)_parent,$(call construct_variable_path,$(2)))
+    $(call assign,__$(2)_parent,$(lastword $(__$(2)_parent)))
+    $(call assign,__$(2)_children,$(filter $(2)[%],$(.VARIABLES)))
+    $(call assign,__$(2)_children,$(patsubst $(2)[%],%,$(__$(2)_children)))
+    $(call assign,__$(2)_children,$(foreach v,$(__$(2)_children),$(firstword $(subst ][, ,$(v)))))
+    $(call assign,__$(2)_children,$(sort $(__$(2)_children)))
+
+    $(call debug,__$(2)_parent __$(2)_children,$(1))
+
+    $(info $(empty)$(1)$(__$(2)_parent))
+
+    $(if $(filter undefined,$(origin $(2))),,\
+        $(info $(empty)$(spaces)$(1)$($(2))))
+
+    $(if $(__$(2)_children),\
+        $(foreach child,$(__$(2)_children),$(call display_config,$(spaces)$(1),$(2)[$(child)])))
+endef

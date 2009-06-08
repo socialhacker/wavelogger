@@ -1,0 +1,284 @@
+#!/usr/bin/env python
+# -*- mode: python; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+import os
+import struct
+
+try:
+    import wx
+except ImportError:
+    print "Failed to import WxPython.  Please make sure the WxPython package is installed."
+    print "On Ubuntu this can be done from the package manager by searching for 'wx python'"
+    print "and installing python-wxgtk2.8 or equivalent."
+    exit(1)
+
+import serial_thread
+import chart
+
+#
+#
+#
+class MyFrame(wx.Frame) :
+    def __init__(self, parent, ID, title, reader, ports) :
+        wx.Frame.__init__(self,
+                          parent,
+                          ID,
+                          title,
+                          wx.DefaultPosition,
+                          wx.Size(1000, 400))
+
+        ID_ABOUT        = 101
+        ID_EXIT         = 102
+        ID_INPUT        = 103
+        ID_START        = 104
+        ID_STOP         = 105
+        ID_OPEN         = 106
+        ID_CLEAR        = 107
+        ID_START_BUTTON = 108
+        ID_STOP_BUTTON  = 109
+        ID_OPEN_BUTTON  = 110
+        ID_CLEAR_BUTTON = 111
+        ID_SERIAL_LIST  = 112
+
+        self.history  = []
+        self.position = -1
+        self.reader   = reader
+        self.ports    = ports
+        self.text     = ""
+
+        self.reader.set_target(self);
+        self.reader.start()
+
+        self.CreateStatusBar()
+        menu = wx.Menu()
+        menu.Append(ID_START, "&Start", "Start generating samples")
+        menu.Append(ID_STOP,  "&Stop",  "Stop generating samples")
+        menu.Append(ID_OPEN,  "&Open",  "Open samples file")
+        menu.Append(ID_CLEAR, "&Clear", "Clear stripchart")
+        menu.Append(ID_ABOUT, "&About", "About Stripchart")
+        menu.AppendSeparator()
+        menu.Append(ID_EXIT, "E&xit", "Exit Stripchart")
+        menuBar = wx.MenuBar()
+        menuBar.Append(menu, "&File");
+        self.SetMenuBar(menuBar)
+
+        font      = self.GetFont();
+        font_size = font.GetPointSize();
+
+        self.font     = wx.Font(font_size,
+                                wx.FONTFAMILY_TELETYPE,
+                                wx.FONTSTYLE_NORMAL,
+                                wx.FONTWEIGHT_NORMAL);
+
+        self.chart    = chart.Chart(self)
+        self.terminal = wx.TextCtrl(self, -1,       style = (wx.TE_DONTWRAP | wx.TE_MULTILINE | wx.TE_READONLY))
+        self.input    = wx.TextCtrl(self, ID_INPUT, style = (wx.TE_PROCESS_ENTER))
+        self.dialog   = wx.FileDialog(self,         style = (wx.FD_OPEN | wx.FD_FILE_MUST_EXIST))
+
+        self.terminal.SetFont(self.font);
+        self.input.SetFont(self.font);
+
+        self.start_button = wx.Button(self, ID_START_BUTTON, "Start")
+        self.stop_button  = wx.Button(self, ID_STOP_BUTTON,  "Stop")
+        self.open_button  = wx.Button(self, ID_OPEN_BUTTON,  "Open")
+        self.clear_button = wx.Button(self, ID_CLEAR_BUTTON, "Clear")
+        self.serial_list  = wx.Choice(self, ID_SERIAL_LIST, choices = ports)
+
+        self.buttons  = wx.BoxSizer(wx.HORIZONTAL)
+        self.buttons.Add(self.start_button);
+        self.buttons.Add(self.stop_button);
+        self.buttons.Add(self.open_button);
+        self.buttons.Add(self.clear_button);
+        self.buttons.Add(self.serial_list);
+
+        self.sizer    = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.chart,    flag = wx.GROW, proportion = 2)
+        self.sizer.Add(self.buttons)
+        self.sizer.Add(self.terminal, flag = wx.GROW, proportion = 1)
+        self.sizer.Add(self.input,    flag = wx.GROW)
+        self.SetSizer(self.sizer)
+
+        wx.EVT_CHAR      (self.input,            self.OnChar )
+        wx.EVT_ACTIVATE  (self,                  self.OnActive)
+        wx.EVT_CLOSE     (self,                  self.OnClose)
+        wx.EVT_MENU      (self, ID_START,        self.OnStart)
+        wx.EVT_MENU      (self, ID_STOP,         self.OnStop )
+        wx.EVT_MENU      (self, ID_OPEN,         self.OnOpen )
+        wx.EVT_MENU      (self, ID_CLEAR,        self.OnClear)
+        wx.EVT_MENU      (self, ID_ABOUT,        self.OnAbout)
+        wx.EVT_MENU      (self, ID_EXIT,         self.OnExit )
+        wx.EVT_TEXT_ENTER(self, ID_INPUT,        self.OnInput)
+        wx.EVT_BUTTON    (self, ID_START_BUTTON, self.OnStart)
+        wx.EVT_BUTTON    (self, ID_STOP_BUTTON,  self.OnStop )
+        wx.EVT_BUTTON    (self, ID_OPEN_BUTTON,  self.OnOpen )
+        wx.EVT_BUTTON    (self, ID_CLEAR_BUTTON, self.OnClear)
+
+        serial_thread.EVT_SERIAL_TEXT(self, self.OnSerialText)
+
+        self.chart.add_channel([0.0, 0.0, 0.0])
+        self.chart.add_channel([1.0, 0.0, 0.0])
+        self.chart.add_channel([0.0, 1.0, 0.0])
+        self.chart.add_channel([0.0, 0.0, 1.0])
+
+    def OnActive(self, event) :
+        self.input.SetFocus()
+
+    def OnChar(self, event) :
+        key = event.GetKeyCode()
+
+        if (len(self.history) > 0) :
+            if (key == wx.WXK_UP) :
+                self.position = self.position - 1
+
+                if (self.position < 0) :
+                    self.position = 0
+
+                self.input.ChangeValue(self.history[self.position])
+
+            elif (key == wx.WXK_DOWN) :
+                self.position = self.position + 1
+
+                if (self.position < len(self.history)) :
+                    self.input.ChangeValue(self.history[self.position])
+                else :
+                    self.input.ChangeValue("");
+                    self.position = len(self.history)
+            else :
+                event.Skip()
+        else :
+            event.Skip()
+
+    def OnStart(self, event) :
+        self.reader.write("avcc 1\n")
+        self.reader.write("search\n")
+        self.reader.write("sample\n")
+
+    def OnStop(self, event) :
+        self.reader.write("avcc 0\n")
+
+    def OnClear(self, event) :
+        self.chart.clear()
+
+    def OnOpen(self, event) :
+        if (self.dialog.ShowModal() == wx.ID_OK) :
+            directory = self.dialog.GetDirectory()
+            filename  = self.dialog.GetFilename()
+            file      = open(os.path.join(directory, filename), "r")
+            data      = file.read(512)
+            block     = 0
+
+            while (data != "") :
+                (rtc_ticks,
+                 os_ticks,
+                 internal_temperature,
+                 ticks,
+                 count,
+                 battery,
+                 checksum) = struct.unpack_from('<IIHBBHH', data)
+
+                for i in range(2, 64) :
+                    (a, b, c, d) = struct.unpack_from('<HHHH', data, offset = (i * 8))
+
+                    if (a != 0 and a != 65535) :
+                        self.chart.add_data(0, float(a & 0xfff))
+                        self.chart.add_data(1, float(b & 0xfff))
+                        self.chart.add_data(2, float(c & 0xfff))
+                        self.chart.add_data(3, float(d & 0xfff))
+
+                data  = file.read(512)
+                block = block + 1
+        return
+
+    def OnInput(self, event) :
+        text = self.input.GetValue()
+        self.input.ChangeValue("")
+        self.history.append(text)
+        self.position = len(self.history)
+        self.reader.write(text + "\n")
+
+    def OnAbout(self, event) :
+        dialog = wx.MessageDialog(self,
+                                  "Stripchart\n"
+                                  "by Anton Staaf",
+                                  "About Stripchart",
+                                  wx.OK | wx.ICON_INFORMATION)
+        dialog.ShowModal()
+        dialog.Destroy()
+
+    def OnExit(self, event) :
+        self.Close(True)
+
+    def OnClose(self, event) :
+        self.reader.quit()
+        self.Destroy()
+        return True
+
+    def OnSerialText(self, event) :
+        queue         = self.reader.get_queue()
+        chart_updated = False
+
+        while (queue.empty() == False) :
+            self.text += queue.get()
+
+        lines = self.text.splitlines(True)
+        self.text = ""
+
+        if (len(lines) > 0 and not lines[-1].endswith("\n")) :
+            self.text = lines[-1]
+            lines.pop()
+
+        for line in lines :
+            tokens = line.split()
+
+            if (len(tokens) > 0) :
+                if (tokens[0] == "<data>") :
+                    if (0) :
+                        print ", ".join([str(tokens[1]),
+                                         str(tokens[2]),
+                                         str(tokens[3]),
+                                         str(tokens[4])]);
+
+                    self.chart.add_data(0, float(tokens[1]))
+                    self.chart.add_data(1, float(tokens[2]))
+                    self.chart.add_data(2, float(tokens[3]))
+                    self.chart.add_data(3, float(tokens[4]))
+                    chart_updated = True
+                else :
+                    self.terminal.WriteText(line)
+
+        if (chart_updated) :
+            self.chart.Refresh()
+
+class Application(wx.App) :
+    def OnInit(self) :
+        ports  = serial_thread.port_list()
+        reader = serial_thread.SerialThread(ports[0])
+
+        frame = MyFrame(None, -1, "Stripchart", reader, ports)
+        frame.Show(True)
+        self.SetTopWindow(frame)
+
+        return True
+
+def main() :
+    application = Application(0)
+    application.MainLoop()
+
+if __name__ == "__main__" :
+    main()

@@ -1,0 +1,102 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#
+# call construct_variable_name(path)
+#
+construct_variable_name = $(firstword $(1))$(subst $(space),,\
+                                                   $(foreach p,\
+                                                             $(wordlist 2,$(words $(1)),$(1)),\
+                                                             [$(p)]))
+
+#
+# call construct_variable_path(name)
+#
+construct_variable_path = $(subst ][, ,$(subst ], ,$(subst [, ,$(1))))
+
+#
+# call truncate_path(path)
+#
+# Removes the last word in the list of words that makes up the path.  It computes the index of the second to last
+# word in the list by forming a list that has the first element removed.
+#
+truncate_path = $(wordlist 1,$(words $(wordlist 2,$(words $(1)),$(1))),$(1))
+
+#
+# call get_merged(path)
+#
+get_merged = $(if $(1),$(call get_merged,$(call truncate_path,$(1))) $(call get_leaf,$(1)))
+
+#
+# call get_overridden(path)
+#
+get_overridden = $(strip $(if $(1),\
+                              $(if $(call leaf_exists,$(1)),\
+                                   $(call get_leaf,$(1)),\
+                                   $(call get_overridden,$(call truncate_path,$(1))))))
+
+#
+# call get_overridden_bool(path)
+#
+get_overridden_bool = $(strip $(if $(1),\
+                                   $(if $(call leaf_exists,$(1)),\
+                                        $(call get_leaf_bool,$(1)),\
+                                        $(call get_overridden_bool,$(call truncate_path,$(1))))))
+
+#
+# call get_leaf(path)
+#
+get_leaf = $($(call construct_variable_name,$(1)))
+
+#
+# call get_leaf_bool(path)
+#
+get_leaf_bool = $(if $(filter false,$(call get_leaf,$(1))),,$(call get_leaf,$(1)))
+
+#
+# call leaf_exists(path)
+#
+leaf_exists = $(if $(filter undefined,$(origin $(call construct_variable_name,$(1)))),,true)
+
+#
+# void validate_structure(prefix_path, data_path, identifier)
+#
+# Validate that the structure satisfies the required fields and that the fields that are required to be non-empty
+# are in fact non-empty.
+#
+# FIX FIX FIX: Make sure that there are no extra fields that are not specified in the required field specifier.
+#
+define validate_structure_helper
+    $(foreach field,\
+              $(call get_leaf,$(2) fields required),\
+              $(if $(call leaf_exists,$(1) $(field)),,\
+                   $(error $(3) is missing required field '$(field)'))\
+              $(if $(filter $(field),$(call get_leaf,$(2) fields non_empty)),\
+                   $(if $(call get_leaf,$(1) $(field)),,\
+                        $(error $(3)$(single_quote)s field '$(field)' is empty))))
+endef
+
+__structure[structure][name]			:= Structure
+__structure[structure][fields][optional]	:= fields][optional fields][required fields][non_empty
+__structure[structure][fields][required]	:= name
+__structure[structure][fields][non_empty]	:= name
+
+define validate_structure
+    $(call validate_structure_helper,$(2),__structure structure,Structure "$(2)")
+    $(call validate_structure_helper,$(1),$(2),$(3))
+endef
