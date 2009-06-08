@@ -1,0 +1,23 @@
+#
+# Default configuration for Eagle.
+#
+
+Assign F1 'group';
+Assign F2 'move';
+Assign C+S 'save';
+
+BRD:
+Assign F3 'route';
+Assign F4 'ripup';
+Assign F5 'display all; group  (-10000 -10000) (-10000 10000) (10000 10000) (10000 -10000) (-10000 -10000); cut;';
+
+Grid mil dots on 25 2 alt mil 5;
+
+Change width 7;
+Change shape round;
+Change drill 15;
+
+SCH:
+Assign F3 'copy';
+Assign F4 'net';
+

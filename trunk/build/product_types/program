@@ -1,0 +1,53 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+__product_required_fields[program]     :=
+__product_optional_fields[program]     := c_files cpp_files asm_files c_flags libs
+
+
+#######################################################################################################################
+# program_rule_template(product, object_file_list, l_flags, lib_paths, lib_validation_targets, lib_targets)
+#
+define program_rule_template
+.PHONY : $(1)
+
+$(1) : $$(intermediate)/$(1)
+
+$$(intermediate)/$(1) : $(2) $(4) $(6) $(5) $$(intermediate)/$(1).initializers
+	@mkdir -p $$(dir $$(@))
+	@echo "$$(INDENT)LINK  $$(@)"
+	$$(echo)$$(CC) -o $$(@) $(2) $(3) `cat $$(intermediate)/$(1).initializers`
+
+$$(intermediate)/$(1).initializers : $(2) $(4)
+	@mkdir -p $$(dir $$(@))
+	@echo "$$(INDENT)GEN   $$(@)"
+	$$(echo)nm $$(^) | c++filt | awk '/[a-fA-F0-9]+ B .+_module_initializer/ {printf "-u %s ", $$$$3}' > $$(@)
+endef
+
+#######################################################################################################################
+# void __product_generate_rules[program](product, flavor, c_flags, l_flags)
+#
+define __product_generate_rules[program]
+    $(if $(__fast),
+        $(eval $(call program_rule_template,$(1),$(__product[$(1)][objects]),$(__product[$(1)][l_flags]),$(__product[$(1)][lib_paths]))),
+        $(eval $(call program_rule_template,$(1),$(__product[$(1)][objects]),$(__product[$(1)][l_flags]),$(__product[$(1)][lib_paths]),$(__product[$(1)][lib_validation_targets]),$(__product[$(1)][lib_targets]))))
+
+    $(call generate_implicit_rules,$(intermediate),$(__product[$(1)][build_id]),$(__product[$(1)][c_flags]))
+endef
+
+#######################################################################################################################

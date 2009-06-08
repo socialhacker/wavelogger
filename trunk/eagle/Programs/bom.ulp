@@ -1,0 +1,195 @@
+/* -*- mode: c++ -*- */
+
+/*
+ *  This EAGLE User Language Program writes a "Bill Of Materials" in a tab
+ *  seperated file format so that it can be imported to a spreadsheet such
+ *  as Excel. It will take as input either a schematic or a board file.
+ */
+
+numeric string	etype[];
+numeric string	ename[];
+numeric string	evalue[];
+numeric string	pname[];
+numeric string	lname[];
+int		cnt;
+
+string prefix(string RefDes)
+{
+    int		length = strlen(RefDes);
+    int		i;
+
+    for (i = 0; i < length; i++)
+	if (!isalpha(RefDes[i]))
+	    break;
+
+    return strsub(RefDes, 0, i);
+}
+
+int getnumber(string Ename)
+{
+    return strtol(strsub(Ename, strlen(prefix(Ename))));
+}
+
+void doitems()
+{
+    int		item;
+    int		index[];
+    int		istart;
+    int		inext;
+    int		ndx1;
+    int		ndx2;
+    int		start;
+    int		stop;
+    int		qty;
+    int		run;
+
+    /* sort them by common part type */
+    sort(cnt, index, etype, evalue, ename);
+
+    item   = 1;
+    istart = 0;
+    ndx1   = index[istart];
+
+    /* cnt is the total number of items in the parts list */
+    for (inext = 0; ++inext <= cnt;)
+    {
+	/* list each item type on a separate line (long lists for */
+	/* one component type will be on multiple lines) */
+	if (inext < cnt)
+	{
+	    ndx2 = index[inext];
+
+	    if ((evalue[ndx1] == evalue[ndx2]) &&
+		( pname[ndx1] ==  pname[ndx2]) &&
+		( lname[ndx1] ==  lname[ndx2]))
+		continue;	/* don't print, see if next item is same */
+	}
+
+	qty = inext - istart;
+
+	/* when you get to this point */
+	/* qty is the quantity for the current item type */
+	/* istart is the start index for an item type */
+	/* inext is the start index for the next item type */
+
+	printf( "%d\t%d\t%s\t\t\t\t\t%s\t%s\t", item++, qty, evalue[ndx1], pname[ndx1], lname[ndx1]);
+
+	for (; qty; qty--)
+	{
+	    switch (qty)
+	    {
+		case 1:
+		    printf( "%s", ename[ndx1]);
+		    break;
+
+		case 2:
+		    printf( "%s, ", ename[ndx1]);
+		    break;
+
+		default:
+		    start = getnumber( ename[ndx1]);
+
+		    for ( run = 1; run < qty; run++)
+		    {
+			ndx2 = index[istart + run];
+			stop = getnumber( ename[ndx2]);
+			if (stop != start + run)
+			    break;
+		    }
+
+		    switch (run)
+		    {
+			case 1:
+			case 2:
+			    printf( "%s, ", ename[ndx1]);
+			    break;
+
+			default:
+			    ndx2 = index[istart + run - 1];
+			    printf( "%s-%s", ename[ndx1], ename[ndx2]);
+			    if (qty > run)
+				printf( ", ");
+			    qty -= (run - 1);
+			    istart += (run - 1);
+			    break;
+		    }
+		    break;
+	    }
+
+	    ndx1 = index[++istart];
+	}
+
+	printf("\n");
+    }
+}
+
+if (board) board(B)
+{
+    output(filesetext(B.name, ".csv"))
+    {
+	printf( "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		"Item",
+		"Qty.",
+		"Description",
+		"Manufacturer",
+		"Manufacturer PN",
+		"Distributor",
+		"Distributor PN",
+		"Package",
+		"Library",
+		"Reference Designator");
+
+	cnt = 0;
+
+	B.elements(E)
+	{
+	    if (E.package)
+	    {
+		ename[cnt]  = E.name;
+		etype[cnt]  = prefix(E.name);
+		evalue[cnt] = E.value;
+		pname[cnt]  = E.package.name;
+		lname[cnt]  = E.package.library;
+
+		cnt++;
+	    }
+	}
+
+	doitems();
+    }
+}
+else if (schematic) schematic(S)
+{
+    output(filesetext(S.name, ".csv"))
+    {
+	printf( "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		"Item",
+		"Qty.",
+		"Description",
+		"Manufacturer",
+		"Manufacturer PN",
+		"Distributor",
+		"Distributor PN",
+		"Package",
+		"Library",
+		"Reference Designator");
+
+	cnt = 0;
+
+	S.parts(P)
+	{
+	    if (P.device.package)
+	    {
+		ename[cnt]  = P.name;
+		etype[cnt]  = prefix(P.name);
+		evalue[cnt] = P.value;
+		pname[cnt]  = P.device.package.name;
+		lname[cnt]  = P.device.package.library;
+
+		cnt++;
+	    }
+	}
+
+	doitems();
+    }
+}

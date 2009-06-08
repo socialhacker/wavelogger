@@ -1,0 +1,60 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+empty        :=
+space        := $(empty) $(empty)
+spaces       := $(empty)    $(empty)
+single_quote := '#'
+slash        := /
+backslashed  := \/
+comma        := ,
+baleeted     :=
+
+floor_pi     := 3 #Mmmmm, floor(pi)
+
+system       := $(shell uname)
+
+ifeq ($(system),Linux)
+    MD5SUM		:= md5sum
+    system_recognized	:= true
+endif
+
+ifeq ($(system),Darwin)
+    MD5SUM		:= md5 -r
+    system_recognized	:= true
+endif
+
+ifneq ($(system_recognized),true)
+    $(error "Unrecognized system type "$(system))
+endif
+
+CC           := $(__tool_prefix)$(__tool_gcc_hack)
+CPLUS        := $(__tool_prefix)g++
+LD           := $(__tool_prefix)ld
+AR           := $(__tool_prefix)ar -rc
+INDENT       := ""
+
+#
+# void assign(variable_name, string)
+#
+assign = $(eval $(1) := $(2))
+
+#
+# void append(variable_name, string)
+#
+append = $(eval $(1) += $(2))

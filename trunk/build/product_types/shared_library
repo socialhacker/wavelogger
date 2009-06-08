@@ -1,0 +1,60 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+__product_required_fields[shared_library]              :=
+__product_optional_fields[shared_library]              := c_files cpp_files asm_files c_flags major_version minor_version patch_version
+__product_field_default[major_version][shared_library] := 0
+__product_field_default[minor_version][shared_library] := 1
+__product_field_default[patch_version][shared_library] := 0
+
+#######################################################################################################################
+# eval-call shared_library_rule_template(product, object_file_list, flavor, path)
+#
+define shared_library_rule_template
+.PHONY : $(1)
+
+__$(1)_major_version := $$(call get_overridden,__product_field_default major_version shared_library)
+__$(1)_minor_version := $$(call get_overridden,__product_field_default minor_version shared_library)
+__$(1)_patch_version := $$(call get_overridden,__product_field_default patch_version shared_library)
+__$(1)_shared_target := lib$(1).so.$$(__$(1)_major_version).$$(__$(1)_minor_version).$$(__$(1)_patch_version)
+
+$(1) : $$(intermediate)/$$(__$(1)_shared_target) $$(intermediate)/Makefile.using.$(1)
+
+$$(intermediate)/$$(__$(1)_shared_target) : $(2)
+	@mkdir -p $$(dir $$(@))
+	@echo "$$(INDENT)LINK  $$(@)"
+	$$(echo)$$(CC) -shared -Wl,-soname,lib$(1).so.$$(__$(1)_major_version) -o $$(@) $$(^)
+
+$$(intermediate)/Makefile.using.$(1) :
+	@mkdir -p $$(dir $$(@))
+	@echo "$$(INDENT)WRITE $$(@)"
+	$$(echo)echo "library[$(4)][$(1)][l_flags]      :=" > $$(@)
+	$$(echo)echo "library[$(4)][$(1)][c_flags]      :=" >> $$(@)
+	$$(echo)echo "library[$(4)][$(1)][library_path] := $(4)/$(3)/$$(__$(1)_shared_target)" >> $$(@)
+	$$(echo)echo "library[$(4)][$(1)][depend_libs]  := $$(__product[$(1)][libs])" >> $$(@)
+endef
+
+#######################################################################################################################
+# void __product_generate_rules[shared_library](product, flavor, c_flags, l_flags)
+#
+define __product_generate_rules[shared_library]
+    $(eval $(call shared_library_rule_template,$(1),$(__product[$(1)][objects]),$(2),$(__path_from_root)))
+    $(call generate_implicit_rules,$(intermediate),$(__product[$(1)][build_id]),$(__product[$(1)][c_flags]))
+endef
+
+#######################################################################################################################

@@ -1,0 +1,99 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+PGM		:= avrdude
+PGM_PROG	:= avrispv2
+PGM_PORT	:= usb
+PGM_FLAGS	:= -B 8
+PGM_CMD		:= $(PGM) $(PGM_FLAGS) -p $(PGM_MCU) -c $(PGM_PROG) -P $(PGM_PORT)
+
+OBJCOPY		:= avr-objcopy
+OBJDUMP		:= avr-objdump
+
+all: $(products:%=%.hex)
+
+%.hex : %
+	@echo "HEX  $<"
+	@$(OBJCOPY) -j .text -j .data -j .rodata -O ihex $< $@
+	@echo "SIZE $<"
+	@avr-size $<
+
+%.disasm : %
+	$(OBJDUMP) -S $< > $@
+
+.PHONY: write
+write: $(TARGET).hex
+	$(PGM_CMD) -U flash:w:$(TARGET).hex
+
+.PHONY: info
+info:
+	$(PGM_CMD)
+
+.PHONY: avrdude_dir
+avrdude_dir:
+	mkdir -p .avrdude
+
+.PHONY: avrdude_terminal
+avrdude_terminal:
+	$(PGM_CMD) -t
+
+.PHONY: read_fuses
+read_fuses: avrdude_dir
+	$(PGM_CMD) -U lfuse:r:.avrdude/fuse.low:h -U hfuse:r:.avrdude/fuse.high:h
+
+.PHONY: read_eeprom
+read_eeprom: avrdude_dir
+	$(PGM_CMD) -U eeprom:r:.avrdude/eeprom.txt:h
+
+.PHONY: read_calibration
+read_calibration: avrdude_dir
+	$(PGM_CMD) -U calibration:r:.avrdude/calibration.txt:h
+
+.PHONY: copy_calibration_1MHz
+copy_calibration_1MHz: read_calibration
+	$(PGM_CMD) -U eeprom:w:`cut -d',' -f 1 .avrdude/calibration`:m
+
+.PHONY: copy_calibration_2MHz
+copy_calibration_2MHz: read_calibration
+	$(PGM_CMD) -U eeprom:w:`cut -d',' -f 1 .avrdude/calibration`:m
+
+.PHONY: copy_calibration_4MHz
+copy_calibration_4MHz: read_calibration
+	$(PGM_CMD) -U eeprom:w:`cut -d',' -f 1 .avrdude/calibration`:m
+
+.PHONY: copy_calibration_8MHz
+copy_calibration_8MHz: read_calibration
+	$(PGM_CMD) -U eeprom:w:`cut -d',' -f 1 .avrdude/calibration`:m
+
+.PHONY: extract_fuses
+extract_fuses: avrdude_dir
+	avr-objcopy -j .fuse -O binary $(TARGET) .avrdude/fuses.bin
+
+.PHONY: write_fuses
+write_fuses: extract_fuses
+	@echo "Writing high fuse byte = " `od -A n -t x1 -j 1 -N 1 .avrdude/fuses.bin | tr -d ' '`
+	$(PGM_CMD) -U hfuse:w:0x`od -A n -t x1 -j 1 -N 1 .avrdude/fuses.bin | tr -d ' '`:m
+	@echo "Writing low  fuse byte = " `od -A n -t x1 -j 0 -N 1 .avrdude/fuses.bin | tr -d ' '`
+	$(PGM_CMD) -U lfuse:w:0x`od -A n -t x1 -j 0 -N 1 .avrdude/fuses.bin | tr -d ' '`:m
+
+.PHONY: show_fuses
+show_fuses: read_fuses
+	@echo "Fuse =" `cat .avrdude/fuse.high .avrdude/fuse.low`
+
+.PHONY: show_calibration
+show_calibration: read_eeprom
+	@echo "Calibration = " `cut -d',' -f 1 .avrdude/eeprom.txt`

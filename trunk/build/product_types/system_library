@@ -1,0 +1,46 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+__product_required_fields[system_library] := l_flags
+__product_optional_fields[system_library] := c_flags libs using_c_flags
+
+#######################################################################################################################
+# eval-call system_library_rule_template(product, path, l_flags, c_flags)
+#
+define system_library_rule_template
+.PHONY : $(1)
+
+$(1) : $$(intermediate)/Makefile.using.$(1)
+
+$$(intermediate)/Makefile.using.$(1) :
+	@mkdir -p $$(dir $$(@))
+	@echo "$$(INDENT)WRITE $$(@)"
+	$$(echo)echo "library[$(2)][$(1)][l_flags]      := $(3)" > $$(@)
+	$$(echo)echo "library[$(2)][$(1)][c_flags]      := $(4)" >> $$(@)
+	$$(echo)echo "library[$(2)][$(1)][library_path] := " >> $$(@)
+	$$(echo)echo "library[$(2)][$(1)][depend_libs]  := $$(__product[$(1)][libs])" >> $$(@)
+endef
+
+#######################################################################################################################
+# void __product_generate_rules[system_library](product, flavor, c_flags, l_flags)
+#
+define __product_generate_rules[system_library]
+    $(eval $(call system_library_rule_template,$(1),$(__path_from_root),$(call get_overridden,$(1) l_flags $(2)),$(call get_overridden,$(1) using_c_flags $(2))))
+endef
+
+#######################################################################################################################

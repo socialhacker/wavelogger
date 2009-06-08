@@ -1,0 +1,60 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+__product_required_fields[library] :=
+__product_optional_fields[library] := c_files cpp_files asm_files c_flags libs using_c_flags
+
+
+
+
+#######################################################################################################################
+# eval-call static_library_rule_template(product, object_file_list, flavor, path)
+#
+define static_library_rule_template
+.PHONY : $(1)
+
+
+
+
+__$(1)_static_target := lib$(1).a
+
+$(1) : $$(intermediate)/$$(__$(1)_static_target) $$(intermediate)/Makefile.using.$(1)
+
+$$(intermediate)/$$(__$(1)_static_target) : $(2)
+	@mkdir -p $$(dir $$(@))
+	@echo "$$(INDENT)AR    $$(@)"
+	$$(echo)$$(AR) $$(@) $$(^)
+
+$$(intermediate)/Makefile.using.$(1) :
+	@mkdir -p $$(dir $$(@))
+	@echo "$$(INDENT)WRITE $$(@)"
+	$$(echo)echo "library[$(4)][$(1)][l_flags]      :=" > $$(@)
+	$$(echo)echo "library[$(4)][$(1)][c_flags]      :=" >> $$(@)
+	$$(echo)echo "library[$(4)][$(1)][library_path] := $(4)/$(3)/$$(__$(1)_static_target)" >> $$(@)
+	$$(echo)echo "library[$(4)][$(1)][depend_libs]  := $$(__product[$(1)][libs])" >> $$(@)
+endef
+
+#######################################################################################################################
+# void __product_generate_rules[library](product, flavor, c_flags, l_flags)
+#
+define __product_generate_rules[library]
+    $(eval $(call static_library_rule_template,$(1),$(__product[$(1)][objects]),$(2),$(__path_from_root)))
+    $(call generate_implicit_rules,$(intermediate),$(__product[$(1)][build_id]),$(__product[$(1)][c_flags]))
+endef
+
+#######################################################################################################################

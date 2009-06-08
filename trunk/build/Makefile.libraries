@@ -1,0 +1,75 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#
+# Define the required library fields
+#
+__structure[library][name]		:= Library
+__structure[library][fields][optional]	:=
+__structure[library][fields][required]	:= l_flags library_path depend_libs
+__structure[library][fields][non_empty]	:=
+
+#
+# void validate_library(library_path, library_product)
+#
+# Validate the library structure.
+#
+define validate_library
+    $(call validate_structure,library $(1) $(2),__structure library,Library $(1):$(2))
+endef
+
+#
+# void import_library_file(library, flavor)
+#
+# Load the library description file defined by library and flavor if it has not already been loaded.  Then recursivly
+# load all of the library description files for the libraries that this library depends on.
+#
+define import_library_file
+    $(if $(__verbose),$(info Including $(1)))
+    $(foreach path,$(__libs_directory)/$(strip $(word 1,$(subst :, ,$(1)))),
+    $(foreach product,$(strip $(word 2,$(subst :, ,$(1)))),
+    $(if $(call leaf_exists,library $(path) $(product) l_flags),,\
+         $(eval -include $(depth)/$(path)/$(2)/Makefile.using.$(product))\
+         $(eval $(call generate_library_rebuild_template,$(path),$(product),$(2)))
+         $(if $(call leaf_exists,library $(path) $(product) l_flags),\
+              $(call validate_library,$(path),$(product))\
+              $(foreach library,\
+                        $(call get_leaf,library $(path) $(product) depend_libs),\
+                        $(call import_library_file,$(library),$(2))),\
+              $(call assign,__include_dep_files,)))))
+endef
+
+#
+# void generate_library_rebuild_template(library_path, library_product, flavor)
+#
+define generate_library_rebuild_template
+
+.PHONY: $(1)[$(2)] __validate_$(1)[$(2)]
+
+$(1)[$(2)] :
+	@echo "$$(INDENT)Checking that $(1):$(2) is up to date"
+	$$(echo)$$(MAKE) INDENT='$$(INDENT)    ' -s -C $$(depth)/$(1) $(2) $(3)
+
+__validate_$(1)[$(2)] :
+	@echo "$$(INDENT)Validating $(1):$(2)"
+	$$(call validate_library,$(1),$(2))
+
+$(depth)/$(1)/$(3)/Makefile.using.$(2) :
+	@echo "$$(INDENT)Building $(1):$(2) for $$(@)"
+	$$(echo)$$(MAKE) INDENT='$$(INDENT)    ' -s -C $$(depth)/$(1) $(2) $(3)
+endef

@@ -1,0 +1,163 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+$(if $(filter undefined,$(origin depth)),\
+     $(error You must set 'depth' in your makefile.  It must be a relative path to the root of the source tree.))
+
+$(if $(filter undefined,$(origin products)),\
+     $(error You must set 'products' in your makefile.  It must contain the list of products that are defined.))
+
+$(if $(filter undefined,$(origin __tool_prefix)),\
+     $(error You must include one of the Makefile.<toolchain> makefiles in your makefile.))
+
+#
+# If there is nothing on the command line we still want to have MAKECMDGOALS defined.
+# --warn-undefined-variables will complain otherwise.
+#
+ifndef MAKECMDGOALS
+    MAKECMDGOALS = $(empty)
+endif
+
+include $(depth)/build/Makefile.constants
+include $(depth)/build/Makefile.debugging
+include $(depth)/build/Makefile.structured
+include $(depth)/build/Makefile.products
+include $(depth)/build/Makefile.flavors
+include $(depth)/build/Makefile.actions
+include $(depth)/build/Makefile.implicit
+include $(depth)/build/Makefile.object
+include $(depth)/build/Makefile.depend
+include $(depth)/build/Makefile.libraries
+
+__products		:= $(products)
+__flavors		:= release debug profile coverage
+__actions		:= build clean help
+__options		:= verbose fast
+
+#
+# Make sure that the Makefile hasn't defined any products that have the same name as any of our command line options.
+# This isn't the best solution to this problem.  The final solution may require some extra command line option to
+# uniquely identify the product names on the command line.
+#
+$(if $(filter $(__products), $(__flavors) $(__actions) $(__options)),\
+     $(error The product names must not conflict with the build systems flavor, action or option names.\
+             Offending product name(s): $(filter $(__products), $(__flavors) $(__actions) $(__options))))
+
+__selected_flavor	:= $(call select_flavor,$(__flavors),$(MAKECMDGOALS))
+__selected_action	:= $(call select_action,$(__actions),$(MAKECMDGOALS))
+__selected_products	:= $(if $(filter clean,$(__selected_action)),,$(call select_products,$(__products),$(MAKECMDGOALS)))
+
+#
+# This will be used by Makefile.avrdude to select the product to download to the target.
+#
+selected_products	:= $(__selected_products)
+
+__verbose		:= $(filter verbose,$(MAKECMDGOALS))
+__fast                  := $(filter fast,$(MAKECMDGOALS))
+
+__include_dep_files	:= $(if $(filter clean,$(MAKECMDGOALS)),,true)
+
+construct_path = $(firstword $(1))$(subst $(space),,$(foreach word,$(wordlist 2,$(words $(1)),$(1)),/$(word)))
+
+__depth_elements	:= $(subst /, ,$(depth))
+__depth_count		:= $(words $(__depth_elements))
+__curdir_elements	:= $(subst /, ,$(CURDIR))
+__curdir_count		:= $(words $(__curdir_elements))
+__path_from_root	:= $(call construct_path,$(wordlist $(words $(wordlist $(__depth_count),\
+                                                                               $(__curdir_count),\
+                                                                               $(__curdir_elements))),\
+                                                            $(__curdir_count),\
+                                                            $(__curdir_elements)))
+__libs_directory	:= $(if $(__root_directory),$(__root_directory)/libs,libs)
+
+intermediate		:= $(__selected_flavor)
+echo			:= $(if $(__verbose),,@)
+
+#
+#
+#
+__CFLAGS := -Wall
+__CFLAGS += -Wpointer-arith
+__CFLAGS += -Wcast-qual
+__CFLAGS += -Wcast-align
+__CFLAGS += -Wundef
+__CFLAGS += -Wsign-compare
+__CFLAGS += -Wredundant-decls
+__CFLAGS += -fmessage-length=0	# Helps with error message parsing/printing
+__CFLAGS += -iquote$(intermediate)
+__CFLAGS += -iquote$(depth)/$(__root_directory)
+
+__LFLAGS := 
+
+#
+# Add any options specified in the tool chain file.
+#
+__CFLAGS += $(call get_merged, __tool_cflags $(__selected_flavor))
+__LFLAGS += $(call get_merged, __tool_lflags $(__selected_flavor))
+
+#
+# Command line handleing
+#
+.PHONY:   $(__actions) $(__flavors) $(__options)
+
+build:    $(__selected_products)
+release:  $(__selected_products)
+debug:    $(__selected_products)
+profile:  $(__selected_products)
+coverage: $(__selected_products)
+verbose:  $(__selected_products)
+fast:     $(__selected_products)
+
+__clean_targets := $(shell ls */Makefile 2> /dev/null | sed "s/\/Makefile/\.clean/")
+
+#
+# Why does this need to be commented out?
+#
+#.PHONY: $(__clean_targets)
+
+%.clean:
+	@echo "$(INDENT)$(basename $(@))"
+	-@$(MAKE) INDENT='$(INDENT)    ' -s -C $(basename $(@)) clean
+
+clean: $(__clean_targets)
+	@echo "$(INDENT)CLEAN"
+	$(echo)rm -rf *~ $(__flavors)
+
+help:
+	@echo "Usage: make [$(products)] (default 'all')"
+	@echo "            [release | debug | profile | coverage] (default 'release')"
+	@echo "            [build | clean | help] (default 'build')"
+	@echo "            [verbose]"
+	@echo "            [fast]"
+
+#
+#
+#
+define main
+    $(call import_type_plugins_for_products,$(__selected_products))
+    $(call import_libraries_for_products,$(__selected_products),$(__selected_flavor))
+    $(call generate_rules_for_products,$(__selected_products),$(__selected_flavor),$(__CFLAGS),$(__LFLAGS))
+
+    $(if $(__include_dep_files),\
+        $(call include_dep_files)))
+endef
+
+#
+# Assigning to __residue allows us to ignore any results that were returned by main.
+#
+__residue := $(call main)

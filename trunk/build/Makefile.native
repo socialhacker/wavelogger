@@ -1,0 +1,34 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+__tool_prefix		:=
+__tool_gcc_hack		:= g++
+
+__tool_cflags		:= -iquote$(depth)/tools
+__tool_cflags[release]	:= -O3
+__tool_cflags[debug]	:= -ggdb
+__tool_cflags[profile]	:= -pg -O3
+__tool_cflags[coverage]	:= -fprofile-arcs -ftest-coverage
+
+__tool_lflags		:=
+__tool_lflags[profile]	:= -pg
+__tool_lflags[coverage]	:= -fprofile-arcs -ftest-coverage
+
+__root_directory	:= tools
+
+include $(depth)/build/Makefile.rules

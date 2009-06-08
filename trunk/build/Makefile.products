@@ -1,0 +1,303 @@
+# -*- mode: makefile; -*-
+#
+# Copyright 2009 Anton Staaf
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#
+# Define the type independent required and optional fields
+#
+__product_required_fields        := type
+__product_optional_fields        := install
+__product_field_default[install] := true
+
+#
+# void display_products(products)
+#
+define display_products
+    $(info Products:)
+    $(foreach product,$(1),$(info $(empty)$(spaces)$(product)))
+endef
+
+#
+# void compute_merged_product_fields(type)
+#
+# Compute the merged required and optional fields for the type passed.
+#
+define compute_merged_product_fields
+    $(call assign,__merged_product_required_fields[$(1)],$(call get_merged,__product_required_fields $(1)))
+    $(call assign,__merged_product_optional_fields[$(1)],$(call get_merged,__product_optional_fields $(1)))
+endef
+
+#
+# void validate_product(product)
+#
+# Validate that the product satisfies the required fields.
+#
+# FIX FIX FIX: Make sure that there are no extra fields that are not specified in the required or optional field
+# specifiers.
+#
+define validate_product
+    $(foreach field,\
+              $(__merged_product_required_fields[$($(1)[type])]),\
+              $(if $(call leaf_exists,$(1) $(field)),,\
+                   $(error Product $(1) is missing required field '$(field)'))\
+              $(if $(call get_leaf,$(1) $(field)),,\
+                   $(error Product $(1)$(single_quote)s field '$(field)' is empty)))
+endef
+
+#
+# void prevalidate_product(product)
+#
+# Validate that the product satisfies the required fields before the type specific required fields are added.
+#
+define prevalidate_product
+    $(foreach field,\
+              $(__product_required_fields),\
+              $(if $(call leaf_exists,$(1) $(field)),,\
+                   $(error Product $(1) is missing required field '$(field)'))\
+              $(if $(call get_leaf,$(1) $(field)),,\
+                   $(error Product $(1)$(single_quote)s field '$(field)' is empty)))
+endef
+
+#
+# void apply_product_defaults(product)
+#
+# For each optional field not specified for the given product we look to see if a default value is supplied.  If there
+# is a default value it is used.  If there is a type specific default value it is used instead of any type independent
+# default value found.
+#
+define apply_product_defaults
+    $(foreach field,\
+              $(__merged_product_optional_fields[$($(1)[type])]),\
+              $(if $(call leaf_exists,$(1) $(field)),,\
+                   $(if $(call get_overridden,__product_field_default $(field) $($(1)[type])),\
+                        $(call assign,\
+                               $(1)[$(field)],\
+                               $(call get_overridden,__product_field_default $(field) $($(1)[type]))))))
+endef
+
+#
+# void import_type_plugin(type)
+#
+define import_type_plugin
+    $(eval include $(depth)/build/product_types/$(1))
+
+    $(if $(filter undefined,$(origin __product_generate_rules[$(1)])),\
+         $(error __product_generate_rules[$(1)] not defined by makefile $(depth)/build/product_types/$(1)))
+endef
+
+#
+# void import_type_plugins_for_products(products)
+#
+define import_type_plugins_for_products
+    #
+    # Figure out what types of products we are going to be building and include the Makefiles that define the code
+    # and rules for those types.  First we validate that all of the products have the type independent required fields.
+    #
+    $(foreach product,$(1),$(call prevalidate_product,$(product)))
+
+    $(call assign,__types,$(sort $(foreach product,$(1),$($(product)[type]))))
+
+    $(foreach type,$(__types),$(call import_type_plugin,$(type)))
+
+    #
+    # Compute the merged field data for all types that are used.
+    #
+    $(foreach type,$(__types),$(call compute_merged_product_fields,$(type)))
+
+    #
+    # Validate each product that could be built.
+    #
+    $(foreach product,$(1),$(call validate_product,$(product)))
+
+    #
+    # Assign any default values to fields that were not specified.
+    #
+    $(foreach product,$(1),$(call apply_product_defaults,$(product)))
+endef
+
+#
+# void import_libraries_for_products(products, flavor)
+#
+define import_libraries_for_products
+    $(call assign,__product_libs)
+    $(foreach product,\
+              $(1),\
+              $(foreach library,\
+                        $(call get_overridden,$(product) libs $(2)),\
+                        $(call append,__product_libs,$(library))))
+    $(call assign,__product_libs,$(sort $(__product_libs)))
+    $(foreach library, $(__product_libs), $(call import_library_file,$(library),$(strip $(2)))))
+endef
+
+#
+# void generate_rules_for_products(products, flavor, c_flags, l_flags)
+#
+define generate_rules_for_products
+    #
+    # Generate rules for all of the products.
+    #
+    $(foreach product,\
+              $(1),\
+              $(call populate_product_variables,$(product),$(2),$(3),$(4)),
+              $(call __product_generate_rules[$($(product)[type])],$(product),$(2),$(3),$(4)))
+endef
+
+#
+# list select_products(products, goals)
+#
+# If any goals matches any product then we build those products.  Otherwise we build all of the products.
+#
+select_products = $(if $(filter $(1),$(2)),$(filter $(1),$(2)),$(1))
+
+#
+# void accumulate_libraries(product, flavor, root_libraries)
+#
+# fill __product[$product][libs]
+#
+define accumulate_libraries
+    $(foreach library,$(3),\
+        $(foreach path,$(__libs_directory)/$(strip $(word 1,$(subst :, ,$(library)))),\
+        $(foreach product,$(strip $(word 2,$(subst :, ,$(library)))),\
+            $(if $(filter $(library),$(__product[$(1)][libs])),,\
+                 $(call append,__product[$(1)][libs],$(library))\
+                 $(foreach depend_library,$(call get_leaf,library $(path) $(product) depend_libs),\
+                 $(foreach depend_path,$(__libs_directory)/$(strip $(word 1,$(subst :, ,$(depend_library)))),\
+                 $(foreach depend_product,$(strip $(word 2,$(subst :, ,$(depend_library)))),\
+                     $(call append,__product[$(1)][$(depend_path)][$(depend_product)][references],"ref")\
+                     $(call accumulate_libraries,$(1),$(2),$(depend_library)))))))))
+endef
+
+#
+# Add a special name to the __product[$(product)][$(lib_path)][$(lib_product)][references]
+# hash for the build product.  This lets me pass a single name (the special name) to the function
+# instead of a list of library names.
+#
+# For the library name passed in remove one reference from each library it depends on.
+# Look through the library list for one with zero references
+# Recursively call the function with that library name.
+#
+define truncate_inplace
+    $(call assign,$(1),$(call truncate_path,$($(1))))
+endef
+
+define remove_references
+    $(foreach path,$(__libs_directory)/$(strip $(word 1,$(subst :, ,$(2)))),\
+    $(foreach product,$(strip $(word 2,$(subst :, ,$(2)))),\
+    $(foreach depend_library,$(call get_leaf,library $(path) $(product) depend_libs),\
+    $(foreach depend_path,$(__libs_directory)/$(strip $(word 1,$(subst :, ,$(depend_library)))),\
+    $(foreach depend_product,$(strip $(word 2,$(subst :, ,$(depend_library)))),\
+        $(call truncate_inplace,__product[$(1)][$(depend_path)][$(depend_product)][references]))))))
+endef
+
+define select_library
+    $(call assign,__product[$(1)][next_library],)
+
+    $(foreach library,$(__product[$(1)][remaining_libraries]),\
+    $(foreach path,$(__libs_directory)/$(strip $(word 1,$(subst :, ,$(library)))),\
+    $(foreach product,$(strip $(word 2,$(subst :, ,$(library)))),\
+        $(if $(__product[$(1)][$(path)][$(product)][references]),,\
+            $(call assign,__product[$(1)][next_library],$(library))))))
+
+    $(if $(__product[$(1)][next_library]),,$(error No libraries found with zero references))
+
+    $(call append,__product[$(1)][ordered_libs],$(__product[$(1)][next_library]))
+    $(call remove_references,$(1),$(__product[$(1)][next_library]))
+    $(call assign,__product[$(1)][remaining_libraries],$(filter-out $(__product[$(1)][next_library]),$(__product[$(1)][remaining_libraries])))
+endef
+
+define order_libraries
+    $(call assign,__product[$(1)][remaining_libraries],$(__product[$(1)][libs]))
+    $(call assign,__product[$(1)][ordered_libs],)
+
+    $(foreach library,$(__product[$(1)][libs]),\
+        $(call select_library,$(1)))
+endef
+
+#
+# void populate_product_libs_variable(product, flavor, libraries)
+#
+# while there exists an x in libraries such that x.references == 0
+#     output x
+#     remove x from libraries
+#     foreach y in x.dependancies
+#         y.references--
+#
+define populate_product_libs_variable
+    $(call append,__product[$(1)][libs],$(call get_overridden,$(1) libs $(2)))
+endef
+
+#
+# void populate_product_variables(product, flavor, c_flags, l_flags) 
+#
+define populate_product_variables
+    $(call assign,__product[$(1)][libs],)
+    $(call assign,__product[$(1)][lib_paths],)
+    $(call assign,__product[$(1)][lib_validation_targets],)
+    $(call assign,__product[$(1)][c_files],$(call get_overridden,$(1) c_files $(2)))
+    $(call assign,__product[$(1)][cpp_files],$(call get_overridden,$(1) cpp_files $(2)))
+    $(call assign,__product[$(1)][asm_files],$(call get_overridden,$(1) asm_files $(2)))
+    $(call assign,__product[$(1)][c_flags],$(3) $(call get_overridden,$(1) c_flags $(2)))
+    $(call assign,__product[$(1)][l_flags],$(4) $(call get_overridden,$(1) l_flags $(2)))
+    $(call assign,__product[$(1)][whole_archive],$(call get_overridden,$(1) whole_archive $(2)))
+
+    $(call accumulate_libraries,$(1),$(2),$(call get_overridden,$(1) libs $(2)))
+    $(call order_libraries,$(1))
+
+    $(foreach library,\
+              $(__product[$(1)][ordered_libs]),\
+              $(foreach path,$(__libs_directory)/$(word 1,$(subst :, ,$(library))),\
+              $(foreach product,$(word 2,$(subst :, ,$(library))),\
+              $(foreach flag,\
+                        $(call get_leaf,library $(path) $(product) l_flags),\
+                        $(call append,__product[$(1)][l_flags],$(flag)))\
+              $(foreach flag,\
+                        $(call get_leaf,library $(path) $(product) c_flags),\
+                        $(call append,__product[$(1)][c_flags],$(flag)))\
+              $(call append,__product[$(1)][lib_targets],$(path)[$(product)])\
+              $(call append,__product[$(1)][lib_validation_targets],__validate_$(path)[$(product)])\
+              $(foreach path,\
+                        $(call get_leaf,library $(path) $(product) library_path),\
+                        $(call append,__product[$(1)][lib_paths],$(depth)/$(path)))\
+              $(foreach path,\
+                        $(call get_leaf,library $(path) $(product) library_path),\
+                        $(if $(filter $(library),$(__product[$(1)][whole_archive])),\
+                             $(call append,__product[$(1)][l_flags],-Wl$(comma)-whole-archive $(depth)/$(path) -Wl$(comma)-no-whole-archive),\
+                             $(call append,__product[$(1)][l_flags],$(depth)/$(path)))))))
+
+    $(call assign,__product[$(1)][build_id],$(word 1,$(shell echo $(__product[$(1)][c_flags]) | $(MD5SUM))))
+    $(call assign,__product[$(1)][object_directory],$(intermediate)/objects/$(__product[$(1)][build_id]))
+    $(call assign,__product[$(1)][depend_directory],$(intermediate)/depends/$(__product[$(1)][build_id]))
+    $(call assign,__product[$(1)][objects],$(patsubst %.c,$(__product[$(1)][object_directory])/%.o,$(__product[$(1)][c_files])))
+    $(call append,__product[$(1)][objects],$(patsubst %.cpp,$(__product[$(1)][object_directory])/%.o,$(__product[$(1)][cpp_files])))
+    $(call append,__product[$(1)][objects],$(patsubst %.asm,$(__product[$(1)][object_directory])/%.o,$(__product[$(1)][asm_files])))
+
+    $(call debug,__product[$(1)][c_files]\
+                 __product[$(1)][cpp_files]\
+                 __product[$(1)][asm_files]\
+                 __product[$(1)][c_flags]\
+                 __product[$(1)][libs]\
+                 __product[$(1)][l_flags]\
+                 __product[$(1)][lib_paths]\
+                 __product[$(1)][lib_validation_targets]\
+                 __product[$(1)][build_id]\
+                 __product[$(1)][object_directory]\
+                 __product[$(1)][depend_directory]\
+                 __product[$(1)][objects])
+
+    $(call append,__objects,$(__product[$(1)][objects]))
+    $(call append,__depends,$(patsubst $(__product[$(1)][object_directory])/%.o,$(__product[$(1)][depend_directory])/%.dep,$(__product[$(1)][objects])))
+endef

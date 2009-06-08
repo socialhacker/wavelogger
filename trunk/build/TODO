@@ -1,0 +1,73 @@
+-Check that the files in the cpp_files, asm_files... are actually *.cpp and *.asm.
+
+-Check that there is at least one source file.
+
+-Cleanup product_type plugins.
+
+-Make general structured variable validator.
+
+-Add ability to build for different platforms (Linux, Windows, Palm, PIC, AVR, HC11...)
+
+-Plugins:
+	Product Type:
+		library		+
+		program		+
+		shared_library	+
+		subdirectories	+
+		system_library	+
+		tool		+
+	Flavor:
+		release		+
+		debug		+
+		profile		+
+		coverage	+
+	Action:
+		Build		-
+		Clean		-
+		Install
+	Tool Chain:
+		GCC		-
+		SDCC
+		GCC-AVR		-
+	Platform:
+		Linux		-
+		MacOSX		-
+		Windows
+		Palm
+		Embedded
+	Processor:
+		x86		-
+		AVR		-
+		PIC
+		ARM
+		HC11
+
+        The product type is already set up as a plug-in module of sorts in
+the build system.  The actions are hard coded right now with build being
+the default and clean being a kludge.  It doesn't take into account the
+product type.  Which causes a problem for me when I try to clean a product
+of type "subdirectories" because it doesn't recurse.
+
+        One thought I had was to make a separate plug-in for each feature.
+But some of the features are better expressed in combinations.  And some,
+like the actions are best expressed as methods on the product type/tool
+chain/platform combos.
+
+        So perhaps the correct way to deal with this is to have product
+type plug-ins and tool plug-ins.  The tool plug-ins would export tables of
+valid (tool chain, platform, processor) triplets.  The product type
+plug-ins would have a method to determine which actions they support and a
+method to perform a given action.
+
+        The flavors should probably be options to the product type
+plug-ins.
+
+              product                  tool
+              type                     chain
+                |                        |
+                V                        V
+          +-----------+             +----------+
+product-->|           |  platform-->|          |
+flavor--->|           | processor-->|          |
+action--->|           |<----------->|          |
+          +-----------+             +----------+
