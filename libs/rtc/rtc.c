@@ -125,7 +125,7 @@ uint32 rtc_ticks(const uint8 *data)
      * Compute the hour of the day.  Take into account 12 vs. 24 hour time formats.
      */
     if (data[3] | 0x40)
-	hours = bcd_to_binary(data[3] & ~0x60);
+	hours = bcd_to_binary(data[3] & ~0x60) - 1;
     else
 	hours = bcd_to_binary(data[3]);
 
