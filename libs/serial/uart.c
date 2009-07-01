@@ -20,6 +20,8 @@
 #include "libs/serial/serial.h"
 #include "libs/os/os.h"
 
+SetupError();
+
 #define BAUD_RATE		9600
 #define BAUD_RATE_REGISTER	(F_CPU / (BAUD_RATE * 8l) - 1)
 
