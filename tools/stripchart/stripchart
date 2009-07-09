@@ -165,12 +165,12 @@ class MyFrame(wx.Frame) :
             event.Skip()
 
     def OnStart(self, event) :
-        self.reader.write("avcc 1\n")
+        self.reader.write("gain 243\n")
         self.reader.write("search\n")
         self.reader.write("sample\n")
 
     def OnStop(self, event) :
-        self.reader.write("avcc 0\n")
+        self.reader.write("\n")
 
     def OnClear(self, event) :
         self.chart.clear()

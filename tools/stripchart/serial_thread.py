@@ -34,6 +34,7 @@ except ImportError:
 
 import os
 import time
+import glob
 from threading import Thread
 from Queue import Queue
 
@@ -43,26 +44,11 @@ from Queue import Queue
 def port_list() :
     list = []
 
-    try :
-        file = "/dev/stack_adaptor"
-        port = serial.Serial(file)
-        port.close()
-        list.append(file)
-    except serial.SerialException :
-        pass
-
-    for i in range(0, 10) :
+    for file in (['/dev/stack_adaptor'] +
+                 glob.glob('/dev/ttyUSB*') +
+                 glob.glob('/dev/ttyS*') +
+                 glob.glob('/dev/tty.*')) :
         try :
-            file = "/dev/ttyUSB" + str(i)
-            port = serial.Serial(file)
-            port.close()
-            list.append(file)
-        except serial.SerialException :
-            pass
-
-    for i in range(0, 10) :
-        try :
-            file = "/dev/ttyS" + str(i)
             port = serial.Serial(file)
             port.close()
             list.append(file)
