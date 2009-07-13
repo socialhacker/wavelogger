@@ -14,19 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef __powerdisc_device_h__
-#define __powerdisc_device_h__
+#ifndef __libs_device_h__
+#define __libs_device_h__
 
 #include "libs/error/error.h"
 
 typedef enum
 {
-    message_state_queued  = 0x81,
-    message_state_reading = 0x82,
-    message_state_writing = 0x83,
+    message_state_new     = 0x00,
+    message_state_success = 0x01,
+    message_state_failure = 0x02,
 
-    message_state_success = 0x04,
-    message_state_failure = 0x05
+    message_state_queued  = 0x83,
+    message_state_reading = 0x84,
+    message_state_writing = 0x85,
+
+    message_state_last
 } MessageState;
 
 typedef struct MessageStruct
@@ -41,10 +44,10 @@ typedef struct DeviceStruct
     Message * volatile			tail;
 } Device;
 
-void  device_initialize(Device *device);
+void     device_initialize      (Device *device);
+Message *device_get_next_message(Device *device);
 
-void  message_queue(Message *message, Device *device);
-bool  message_next (Message *message, Device *device);
+bool  message_queue(Message *message, Device *device);
 Error message_wait (Message *message);
 
-#endif //__powerdisc_device_h__
+#endif //__libs_device_h__
