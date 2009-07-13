@@ -35,5 +35,8 @@ void shell_run(const ShellCommand *shell_command_table[], uint shell_command_cou
  */
 void error_stack_print();
 uint32 parse_hex(const char *string);
+uint32 parse_dec(const char *string);
+uint32 parse_oct(const char *string);
+uint32 parse_number(const char *string);
 
 #endif //__shell_h__
