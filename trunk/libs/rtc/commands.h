@@ -20,6 +20,8 @@
 #include "libs/shell/shell.h"
 
 Error rtc_command(uint argc, const char **argv);
+Error rtc_set_date_command(uint argc, const char **argv);
+Error rtc_set_time_command(uint argc, const char **argv);
 Error reset_command(uint argc, const char **argv);
 
 #endif //__rtc_commands_h__
