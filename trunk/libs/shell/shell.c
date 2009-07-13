@@ -62,6 +62,63 @@ uint32 parse_hex(const char *string)
     return result;
 }
 /*********************************************************************************************************************/
+uint32 parse_dec(const char *string)
+{
+    uint32	result = 0;
+
+    for (uint8 i = 0; string[i] != '\0'; ++i)
+    {
+	uint8	byte = string[i];
+
+	if (byte == ' ')
+	    continue;
+
+	if (byte >= '0' && byte <= '9')
+	{
+	    result *= 10;
+	    result += byte - '0';
+	    continue;
+	}
+
+	break;
+    }
+
+    return result;
+}
+/*********************************************************************************************************************/
+uint32 parse_oct(const char *string)
+{
+    uint32	result = 0;
+
+    for (uint8 i = 0; string[i] != '\0'; ++i)
+    {
+	uint8	byte = string[i];
+
+	if (byte == ' ')
+	    continue;
+
+	if (byte >= '0' && byte <= '7')
+	{
+	    result <<= 3;
+	    result |= byte - '0';
+	    continue;
+	}
+
+	break;
+    }
+
+    return result;
+}
+/*********************************************************************************************************************/
+uint32 parse_number(const char *string)
+{
+    if (string[0] == '0' &&
+	string[1] == 'x')
+	return parse_hex(string + 2);
+
+    return parse_dec(string);
+}
+/*********************************************************************************************************************/
 void error_stack_print()
 {
     uint8	count = error_stack_count();
@@ -101,22 +158,18 @@ static void shell_usage(const ShellCommand *shell_command_table[], uint shell_co
 /*********************************************************************************************************************/
 static void parse_line(char *line, uint line_length, uint *argc, const char **argv, uint argv_length)
 {
-    uint	read_index  = 0;
     uint	write_index = 0;
     uint	index       = 0;
     bool	quoted      = false;
     bool	scanning    = true;
 
-    while (line[read_index] != '\0')
+    for (uint read_index = 0; line[read_index] != '\0'; ++read_index)
     {
 	if (scanning)
 	{
-	    while (isspace(line[read_index]))
-		++read_index;
-
-	    if (line[read_index] == '\0')
-		break;
-
+	    /*
+	     * Record this argument into the argv array.
+	     */
 	    if (index < argv_length)
 	    {
 		argv[index] = line + write_index;
@@ -124,6 +177,16 @@ static void parse_line(char *line, uint line_length, uint *argc, const char **ar
 	    }
 
 	    scanning = false;
+
+	    /*
+	     * Scan to the beginning of the next argument of the end of the string.
+	     */
+	    while (isspace(line[read_index]) &&
+		   line[read_index] != '\0')
+		++read_index;
+
+	    if (line[read_index] == '\0')
+		break;
 	}
 
 	if (quoted)
@@ -160,8 +223,6 @@ static void parse_line(char *line, uint line_length, uint *argc, const char **ar
 		    break;
 	    }
 	}
-
-	++read_index;
     }
 
     line[write_index] = '\0';
