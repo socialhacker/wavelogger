@@ -18,7 +18,6 @@
 #include <avr/interrupt.h>
 
 #include "slave.h"
-#include "device.h"
 #include "libs/types/types.h"
 #include "libs/error/error.h"
 
@@ -164,8 +163,6 @@ SIGNAL (USI_OVERFLOW_VECTOR)
 	{
 	    if ((USIDR == 0) || ((USIDR & ~0x01) == _usi.address))
 	    {
-		Message	*current = _usi.device.head;
-
 		_usi.index   = 0;
 		_usi.current = 0;
 
@@ -173,21 +170,13 @@ SIGNAL (USI_OVERFLOW_VECTOR)
 		{
 		    _usi.state = usi_send_data;
 		}
-		else if (current)
+		else if (_usi.device.head)
 		{
-		    _usi.message                = (USIMessage *) current;
-		    _usi.message->message.state = message_state_reading;
-		    _usi.state                  = usi_request_data;
+		    Message	*message = device_get_next_message(&_usi.device);
 
-		    /*
-		     * Remove the head new message from the message queue.  Make sure the tail
-		     * pointer is updated correctly if there are no more messages in the queue.
-		     */
-		    _usi.device.head = current->next;
-		    current->next    = null;
-
-		    if (_usi.device.head == null)
-			_usi.device.tail = null;
+		    message->state = message_state_reading;
+		    _usi.message   = (USIMessage *) message;
+		    _usi.state     = usi_request_data;
 		}
 		else
 		{

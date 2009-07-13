@@ -15,21 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-depth		:= ..
-products	:= power
+depth			:= ../..
+products		:= device_8 device_644 device_t85
 
-power[type]	:= program
-power[c_files]	:= main.c slave.c
-power[c_flags]	:= -mmcu=attiny85
-power[l_flags]	:= -mmcu=attiny85
-power[libs]	:= types:types_t85
-power[libs]	+= error:error_t85
-power[libs]	+= os:os_t85
-power[libs]	+= device:device_t85
+device_8[type]		:= library
+device_8[c_files]	:= device.c
+device_8[c_flags]	:= -mmcu=atmega8
+device_8[libs]		:= types:types_8
+device_8[libs]		+= error:error_8
+
+device_644[type]	:= library
+device_644[c_files]	:= device.c
+device_644[c_flags]	:= -mmcu=atmega644p
+device_644[libs]	:= types:types_644
+device_644[libs]	:= error:error_644
+
+device_t85[type]	:= library
+device_t85[c_files]	:= device.c
+device_t85[c_flags]	:= -mmcu=attiny85
+device_t85[libs]	:= types:types_t85
+device_t85[libs]	:= error:error_t85
 
 include $(depth)/build/Makefile.avr
-
-PGM_MCU		:= t85
-TARGET		:= release/power
-
-include $(depth)/Makefile.avrdude

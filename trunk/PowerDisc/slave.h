@@ -20,7 +20,7 @@
 #include "libs/types/types.h"
 #include "libs/error/error.h"
 #include "libs/os/os.h"
-#include "device.h"
+#include "libs/device/device.h"
 
 /*
  * Device driver state.

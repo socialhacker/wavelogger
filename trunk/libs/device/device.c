@@ -17,8 +17,10 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 
-#include "device.h"
+#include "libs/device/device.h"
 #include "libs/os/os.h"
+
+SetupError();
 
 /**************************************************************************************************/
 void device_initialize(Device *device)
@@ -27,8 +29,10 @@ void device_initialize(Device *device)
     device->tail = null;
 }
 /**************************************************************************************************/
-void message_queue(Message *message, Device *device)
+bool message_queue(Message *message, Device *device)
 {
+    bool	was_empty = false;
+
     message->next  = null;
     message->state = message_state_queued;
 
@@ -41,49 +45,50 @@ void message_queue(Message *message, Device *device)
     uint8 sreg_backup = SREG;
     cli();
     {
+	was_empty = (device->head == null);
+
 	/*
 	 * Insert the message into the message queue.
 	 */
-	if (device->tail != null)
-	    device->tail->next = message;
-	else
+	if (was_empty)
 	    device->head = message;
+	else
+	    device->tail->next = message;
 
 	device->tail = message;
     }
     SREG = sreg_backup;
+
+    return was_empty;
 }
 /**************************************************************************************************/
-bool message_next(Message *message, Device *device)
+Message *device_get_next_message(Device *device)
 {
     Message	*current = device->head;
 
     /*
-     * If the queue is empty to begin with it will certainly be empty after, so return false.
+     * If the queue is empty return null.  No further pointer work needs to be done.
      */
     if (current == null)
-	return false;
+	return null;
 
     /*
-     * If this is the last message in the queue then clear the head and tail pointers and return
-     * false indicating that the queue is empty.
+     * Pop the head of the queue.
+     */
+    device->head = current->next;
+
+    /*
+     * If this is the last message in the queue then clear the tail pointer.
      */
     if (current->next == null)
-    {
-	device->head = null;
 	device->tail = null;
 
-	return false;
-    }
-
     /*
-     * Move to the next message in the queue.  We know there is a next item at this point so we
-     * can return true indicating that there is something left in the queue.
+     * Zero the next pointer so that there is no confusion later.
      */
-    device->head  = current->next;
     current->next = null;
 
-    return true;
+    return current;
 }
 /**************************************************************************************************/
 static bool message_sleep_check(void *user_data)
