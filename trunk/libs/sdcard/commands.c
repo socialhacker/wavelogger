@@ -27,7 +27,7 @@ Error sd_init_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
-    SDCardIndex	card = parse_hex(argv[1]);
+    SDCardIndex	card = parse_number(argv[1]);
 
     return sd_init(card);
 }

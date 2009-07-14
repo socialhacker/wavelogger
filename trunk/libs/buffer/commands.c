@@ -30,7 +30,7 @@ Error read_bw_command(uint argc, const char **argv)
 
     write(PSTR("Buffer read BW test\r\n"));
 
-    uint8	count = parse_hex(argv[1]);
+    uint8	count = parse_number(argv[1]);
     uint32	begin = os_ticks();
     uint32	end;
 
@@ -55,10 +55,10 @@ Error dump_command(uint argc, const char **argv)
 
     const uint		line_length = 16;
     const uint16	count_arg   = 512;
-    uint32		address     = parse_hex(argv[2])              & ~(BYTES_PER_BLOCK - 1);
+    uint32		address     = parse_number(argv[2])           & ~(BYTES_PER_BLOCK - 1);
     uint16		count       = (count_arg + (line_length - 1)) & ~(line_length - 1);
 
-    if (buffer_set_address(parse_hex(argv[1]), address >> 9)) return 1;
+    if (buffer_set_address(parse_number(argv[1]), address >> 9)) return 1;
 
     for (uint16 i = 0; i < count; i += line_length)
     {
