@@ -21,12 +21,12 @@ products		:= analog_8 analog_644 commands_8 commands_644
 analog_8[type]		:= library
 analog_8[c_files]	:= analog_disc.c
 analog_8[c_flags]	:= -mmcu=atmega8
-analog_8[libs]		:= types:types_8 error:error_8 os:os_8 twi:twi_8 gain:gain_8
+analog_8[libs]		:= types:types_8 error:error_8 os:os_8 twi:twi_8 gain:gain_8 device:device_8
 
 analog_644[type]	:= library
 analog_644[c_files]	:= analog_disc.c
 analog_644[c_flags]	:= -mmcu=atmega644p
-analog_644[libs]	:= types:types_644 error:error_644 os:os_644 twi:twi_644 gain:gain_644
+analog_644[libs]	:= types:types_644 error:error_644 os:os_644 twi:twi_644 gain:gain_644 device:device_644
 
 commands_8[type]	:= library
 commands_8[c_files]	:= commands.c

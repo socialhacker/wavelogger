@@ -22,6 +22,7 @@
 #include "libs/types/types.h"
 #include "libs/error/error.h"
 #include "libs/twi/master.h"
+#include "libs/device/device.h"
 
 typedef struct 
 {
@@ -41,40 +42,28 @@ typedef struct
     AnalogSample	sample[100];
 } AnalogData;
 
-typedef enum
-{
-    analog_message_new              = 0x00,
-    analog_message_queued           = 0x81,
-    analog_message_reading          = 0x82,
-    analog_message_success          = 0x03,
-    analog_message_failure          = 0x04,
-} AnalogMessageState;
-
 typedef struct AnalogMessageStruct
 {
-    uint8 volatile * volatile			buffer;
-    uint8 volatile				read_count;
-    AnalogMessageState volatile			state;
-
-    struct AnalogMessageStruct * volatile	next;
+    Message			message;
+    uint8 volatile * volatile	buffer;
+    uint8 volatile		read_count;
 } AnalogMessage;
 
 typedef struct
 {
-    uint8			buffer[8];
-    TWIMessage			message;
+    Device			device;
+
+    uint8			adc_buffer[8];
+    TWIMessage			adc_message;
 
     uint8			aux_buffer[8];
     TWIMessage			aux_message;
 
-    uint8			current;
+    Message			*current;
+    uint8			index;
     ArchTickHandler		tick;
 
     uint8			temp_data[5];
-
-    AnalogMessage * volatile	head;
-    AnalogMessage * volatile	tail;
-    bool volatile		prime;
 } Analog;
 
 /*

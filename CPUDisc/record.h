@@ -14,19 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef __analog_disc_commands_h__
-#define __analog_disc_commands_h__
+#ifndef __cpu_record_h__
+#define __cpu_record_h__
 
 #include "libs/shell/shell.h"
 
-Error search_command(uint argc, const char **argv);
-Error sample_command(uint argc, const char **argv);
-Error average_command(uint argc, const char **argv);
-Error gain_command(uint argc, const char **argv);
-Error dac_command(uint argc, const char **argv);
-Error adc_command(uint argc, const char **argv);
-Error up_command(uint argc, const char **argv);
-Error down_command(uint argc, const char **argv);
-Error test_command(uint argc, const char **argv);
+Error record_command(uint argc, const char **argv);
 
-#endif //__analog_disc_commands_h__
+#endif //__cpu_record_h__

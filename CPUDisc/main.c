@@ -55,6 +55,8 @@
  *
  */
 
+#include "record.h"
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -159,6 +161,7 @@ const ShellCommand shell_command_adc       PROGMEM = {"adc",       adc_command};
 const ShellCommand shell_command_dac       PROGMEM = {"dac",       dac_command};
 const ShellCommand shell_command_search    PROGMEM = {"search",    search_command};
 const ShellCommand shell_command_sample    PROGMEM = {"sample",    sample_command};
+const ShellCommand shell_command_average   PROGMEM = {"average",   average_command};
 const ShellCommand shell_command_test      PROGMEM = {"test",      test_command};
 const ShellCommand shell_command_up        PROGMEM = {"up",        up_command};
 const ShellCommand shell_command_down      PROGMEM = {"down",      down_command};
@@ -169,7 +172,14 @@ const ShellCommand shell_command_down      PROGMEM = {"down",      down_command}
 const ShellCommand shell_command_battery   PROGMEM = {"battery",   battery_command};
 const ShellCommand shell_command_temp      PROGMEM = {"temp",      temp_command};
 const ShellCommand shell_command_rtc       PROGMEM = {"rtc",       rtc_command};
+const ShellCommand shell_command_rtc_date  PROGMEM = {"rtc_date",  rtc_set_date_command};
+const ShellCommand shell_command_rtc_time  PROGMEM = {"rtc_time",  rtc_set_time_command};
 const ShellCommand shell_command_reset     PROGMEM = {"reset",     reset_command};
+
+/*
+ * Record command
+ */
+const ShellCommand shell_command_record    PROGMEM = {"record",    record_command};
 
 const ShellCommand	*shell_command_table[] PROGMEM =
 {
@@ -201,6 +211,7 @@ const ShellCommand	*shell_command_table[] PROGMEM =
     &shell_command_dac,		//boot_module dac
     &shell_command_search,	//boot_module adc
     &shell_command_sample,	//boot_module adc
+    &shell_command_average,	//boot_module adc
     &shell_command_test,	//boot_module adc
     &shell_command_up,		//boot_module adc
     &shell_command_down,	//boot_module adc
@@ -208,7 +219,11 @@ const ShellCommand	*shell_command_table[] PROGMEM =
     &shell_command_battery,
     &shell_command_temp,
     &shell_command_rtc,
+    &shell_command_rtc_date,
+    &shell_command_rtc_time,
     &shell_command_reset,
+
+    &shell_command_record,
 };
 /*********************************************************************************************************************/
 int main(void)

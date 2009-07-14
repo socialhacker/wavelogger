@@ -14,80 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/*
- * ADC0 - LED 1
- * ADC1 - LED 2
- * ADC2 - 
- * ADC3 - 
- * ADC4 - 
- * ADC5 - 
- * ADC6 - 
- * ADC7 - 
- *
- * PB0 -
- * PB1 -
- * PB2 -
- * PB3 - LED 3
- * PB4 - LED 4
- * PB5 - MOSI (ISP interface)
- * PB6 - MISO (ISP interface)
- * PB7 - SCLK (ISP interface)
- *
- * RESET - RESET (ISP interface)
- *
- * PC0 - Stack SCL
- * PC1 - Stack SDA
- * PC2 - Stack Avcc
- * PC3 - 
- * PC4 - SW1
- * PC5 - 
- * PC6 -
- * PC7 -
- *
- * PD0 - Rx
- * PD1 - Tx
- * PD2 - SDCard MISO
- * PD3 - SDCard MOSI
- * PD4 - SDCard SCK
- * PD5 - SDCard CD
- * PD6 - SDCard !SS
- * PD7 -
- *
- */
 
-#include <avr/io.h>
-#include <avr/sleep.h>
-#include <avr/interrupt.h>
-#include <avr/pgmspace.h>
+#include "record.h"
+
+#include "libs/analog_disc/analog_disc.h"
+#include "libs/file_system/file_system.h"
+#include "libs/dac/dac.h"
+#include "libs/led/led.h"
+#include "libs/gain/gain.h"
+#include "libs/rtc/rtc.h"
+#include "libs/stdio/write.h"
+
 #include <util/crc16.h>
 
-#include "libs/types/types.h"
-#include "libs/error/error.h"
-
-#include "libs/shell/shell.h"
-#include "libs/stdio/debug.h"
-#include "libs/stdio/write.h"
-#include "libs/stdio/console.h"
-#include "libs/serial/serial.h"
-#include "libs/cylinder/cylinder.h"
-#include "libs/spi/spi.h"
-#include "libs/sdcard/sdcard.h"
-#include "libs/sdcard/csd.h"
-#include "libs/block/block.h"
-#include "libs/twi/twi.h"
-#include "libs/rtc/rtc.h"
-#include "libs/analog_disc/analog_disc.h"
-#include "libs/gain/gain.h"
-#include "libs/adc/adc.h"
-#include "libs/dac/dac.h"
-#include "libs/power/power.h"
-#include "libs/file_system/file_system.h"
-#include "libs/led/led.h"
-#include "libs/os/os.h"
-
 SetupError();
-
-uint16	fuses __attribute__((section (".fuse"))) = 0xd9e2;
 
 typedef struct
 {
@@ -114,30 +54,6 @@ typedef struct
 STATIC_ASSERT(sizeof(InfoData)   == 512, sizeof_InfoData_not_512);
 STATIC_ASSERT(sizeof(AnalogData) == 512, sizeof_AnalogData_not_512);
 
-/*********************************************************************************************************************/
-const BootModule	*boot_module_table[] PROGMEM =
-{
-    &boot_module_led,
-    &boot_module_serial_write_only,
-    &boot_module_cylinder,
-
-    /*
-     * Boot the spi and sdcard modules.
-     */
-    &boot_module_spi,
-    &boot_module_sdcard,
-    &boot_module_file_system,
-
-    /*
-     * Boot the I2C bus.  This allows access to the analog front end as well as the real time clock,
-     * battery monitor and temperature sensors.
-     */
-    &boot_module_twi,
-    &boot_module_gain,
-    &boot_module_dac,
-    &boot_module_adc,
-    &boot_module_analog
-};
 /*********************************************************************************************************************/
 static Error file_open(const char *filename, FileIndex *file)
 {
@@ -198,7 +114,7 @@ static void wait_on_switch()
     }
 }
 /*********************************************************************************************************************/
-static Error offset_search(InfoData *info)
+static Error offset_search(InfoData * info)
 {
     for (uint8 i = 0; i < 4; ++i)
     {
@@ -256,34 +172,35 @@ static Error check_file_position(FileIndex meta, uint32 *file_position)
     return success;
 }
 /*********************************************************************************************************************/
-int main(void)
+static uint8		data[2][512];
+static AnalogMessage	message[2] =
 {
-    const uint32	meta_interval   = 100 * 100; // 100 sample blocks
+    {{message_state_new, null}, data[0], 200},
+    {{message_state_new, null}, data[1], 200}
+};
 
-    Error		check_error     = success;
-    uint8		index           = 0;
-    FileIndex		file;
-    FileIndex		meta;
-    uint32		last_meta_ticks = 0;
-    ConfigData		config_data;
-    uint8		raw_data[2][512];
-    AnalogData		*analog_data[2] = {(AnalogData *) raw_data[0],
-					   (AnalogData *) raw_data[1]};
-    InfoData		*info_data      = (InfoData *) raw_data[0];
-    AnalogMessage	message[2]      = {{{message_state_new, null}, raw_data[0], 200},
-					   {{message_state_new, null}, raw_data[1], 200}};
+Error record_command(uint argc, const char **argv)
+{
+    Error	check_error = success;
 
     for (uint8 i = 0; i < 2; ++i)
-	for (uint16 j = 0; j < sizeof(raw_data[0]); ++j)
-	    raw_data[i][j] = 0;
+	for (uint16 j = 0; j < sizeof(data[0]); ++j)
+	    data[i][j] = 0;
 
-    os_sleep(100);
+    /*
+     * Read configuration data and use it to open files and set gain.
+     */
+    FileIndex	file;
+    FileIndex	meta;
 
-    CheckCleanup(os_boot(boot_module_table, LENGTH(boot_module_table)), boot_failure);
-    CheckCleanup(read_config_data("config.dat", &config_data), config_failure);
-    CheckCleanup(file_open(config_data.metadata, &meta), meta_failure);
-    CheckCleanup(file_open(config_data.filename, &file), open_failure);
-    CheckCleanup(gain_write_all(config_data.gain), gain_failure);
+    {
+	ConfigData	config_data;
+
+	CheckCleanup(read_config_data("config.dat", &config_data), config_failure);
+	CheckCleanup(file_open(config_data.metadata, &meta), meta_failure);
+	CheckCleanup(file_open(config_data.filename, &file), open_failure);
+	CheckCleanup(gain_write_all(config_data.gain), gain_failure);
+    }
 
     /*
      * Seek into the data file past any data that has already been written to it.
@@ -298,10 +215,14 @@ int main(void)
     /*
      * Populate the info_data and write it to the data file.
      */
-    info_data->reset_reason = os_reset_reason();
+    {
+	InfoData	*info_data = (InfoData *) data[0];
 
-    CheckCleanup(offset_search(info_data), search_failure);
-    CheckCleanup(fs_file_write(file, info_data, sizeof(*info_data), null), info_data_failure);
+	info_data->reset_reason = os_reset_reason();
+
+	CheckCleanup(offset_search(info_data), search_failure);
+	CheckCleanup(fs_file_write(file, info_data, sizeof(*info_data), null), info_data_failure);
+    }
 
     /*
      * Queue up both analog messages and start recording.
@@ -309,9 +230,14 @@ int main(void)
     CheckCleanup(analog_queue_message(&(message[0])), queue_failure);
     CheckCleanup(analog_queue_message(&(message[1])), queue_failure);
 
+    const uint32	meta_interval   = 100 * 100; // 100 sample blocks
+    uint32		last_meta_ticks = 0;
+    uint8		index           = 0;
+
     while (1)
     {
-	uint32	start_ticks = os_ticks();
+	AnalogData	*analog_data = (AnalogData *) data[index];
+	uint32		start_ticks  = os_ticks();
 
 	analog_wait_message(&(message[index]));
 
@@ -323,7 +249,7 @@ int main(void)
 
 	    if (ticks > 0xff) ticks = 0xff;
 
-	    analog_data[index]->ticks = (uint8) ticks;
+	    analog_data->ticks = (uint8) ticks;
 	}
 
 	/*
@@ -335,14 +261,13 @@ int main(void)
 	    for (uint i = 0; i < 512; ++i)
 		crc = _crc_ccitt_update(crc, message[index].buffer[i]);
 
-	    analog_data[index]->checksum = crc;
+	    analog_data->checksum = crc;
 	}
 
 	/*
 	 * Write the message to the SDCard.
 	 */
-	CheckCleanup(fs_file_write(file, raw_data[index], sizeof(raw_data[index]), null),
-		     logging_failure);
+	CheckCleanup(fs_file_write(file, data[index], sizeof(data[index]), null), logging_failure);
 
 	/*
 	 * If the meta_interval has elapsed then we write the current file position to the meta
@@ -370,7 +295,7 @@ int main(void)
 	    rtc_reset_stack();
     }
 
-    return 0;
+    return success;
 
     uint8	narrow;
     uint8	wide;
@@ -385,11 +310,9 @@ int main(void)
   open_failure:		narrow = 2; wide = 3; goto failure;
   meta_failure:		narrow = 2; wide = 2; goto failure;
   config_failure:	narrow = 2; wide = 1; goto failure;
-  boot_failure:		narrow = 1; wide = os_boot_index(); goto failure;
 
   failure:
-    error_stack_print();
-    while (1) led_signal(narrow, wide);
-    return 1;
+    led_signal(narrow, wide);
+    return check_error;
 }
 /*********************************************************************************************************************/
