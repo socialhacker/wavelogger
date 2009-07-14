@@ -28,106 +28,100 @@ SetupError();
 static Analog	_analog;
 
 /**************************************************************************************************/
-static inline uint8 bcd_to_binary(uint8 bcd)
-{
-    return ((bcd >> 4) * 10 + (bcd & 0x0f));
-}
-/**************************************************************************************************/
-static AnalogMessage *next_message()
-{
-    AnalogMessage	*current = _analog.head;
-
-    if (current->next)
-    {
-	_analog.head = current->next;
-	current->next = null;
-    }
-    else
-    {
-	_analog.head = null;
-	_analog.tail = null;
-    }
-
-    return _analog.head;
-}
-/**************************************************************************************************/
 static void analog_tick()
 {
-    AnalogMessage	*current = _analog.head;
-
-    if (current == null)
-	return;
-
-    if (_analog.prime)
+    /*
+     * If there is no current buffer then check to see if there is a buffer waiting in the queue.
+     * If there is then we set it up for reading and prime the ADC converter so that the next time
+     * the analog_tick function is called there will be a message waiting with current analog
+     * data.
+     */
+    if (_analog.current == null)
     {
-	_analog.prime = false;
-    }
-    else
-    {
-	AnalogData volatile	*data   = (AnalogData volatile *) current->buffer;
+	_analog.current = device_get_next_message(&_analog.device);
+	_analog.index   = 0;
 
-	if ((_analog.current & 0x01) == 0x00)
-	    for (uint8 i = 0; i < 5; ++i)
-		_analog.temp_data[i] = 0x00;
+	if (_analog.current == null)
+	    return;
 
-	if ((_analog.message.state & 0x80) == 0x00)
-	{
-	    /*
-	     * The four ten bit numbers are packed into the five byte array as follows:
-	     * [2|2|2|2][8][8][8][8]
-	     */
-	    if ((_analog.current & 0x01) == 0x00)
-	    {
-		_analog.temp_data[0] = (((_analog.buffer[0] & 0x0c) << 4) |
-					((_analog.buffer[2] & 0x0c) << 2));
-		_analog.temp_data[1] = (_analog.buffer[0] << 6) | (_analog.buffer[1] >> 2);
-		_analog.temp_data[2] = (_analog.buffer[2] << 6) | (_analog.buffer[3] >> 2);
-	    }
-	    else
-	    {
-		_analog.temp_data[0] |= (((_analog.buffer[0] & 0x0c) >> 0) |
-					 ((_analog.buffer[2] & 0x0c) >> 2));
-		_analog.temp_data[3] = (_analog.buffer[0] << 6) | (_analog.buffer[1] >> 2);
-		_analog.temp_data[4] = (_analog.buffer[2] << 6) | (_analog.buffer[3] >> 2);
-	    }
-	}
-
-	if ((_analog.current & 0x01) == 0x01)
-	{
-	    uint8 volatile	*sample = (uint8 volatile *) &(data->sample[_analog.current >> 1]);
-
-	    for (uint8 i = 0; i < 5; ++i)
-		sample[i] = _analog.temp_data[i];
-	}
-
-	++_analog.current;
+	_analog.current->state = message_state_reading;
 
 	/*
-	 * If there is no more space in the current buffer move to the next buffer in the queue.
+	 * Queue up the first A/D conversion cycle.
 	 */
-	if (_analog.current >= current->read_count)
+	_analog.adc_buffer[0] = 0xf0;
+
+	if ((_analog.adc_message.state & 0x80) == 0x00)
+	    twi_queue_message(&(_analog.adc_message));
+
+	return;
+    }
+
+    /*
+     * If there is no more space in the current buffer move to the next buffer in the queue.
+     */
+    if (_analog.index >= ((AnalogMessage *)_analog.current)->read_count)
+    {
+	_analog.current->state = message_state_success;
+	_analog.current        = device_get_next_message(&_analog.device);
+	_analog.index          = 0;
+
+	if (_analog.current == null)
+	    return;
+
+	_analog.current->state = message_state_reading;
+    }
+
+    AnalogMessage	*message = (AnalogMessage *) _analog.current;
+    AnalogData volatile	*data    = (AnalogData volatile *) message->buffer;
+
+    if ((_analog.index & 0x01) == 0x00)
+	for (uint8 i = 0; i < 5; ++i)
+	    _analog.temp_data[i] = 0x00;
+
+    if ((_analog.adc_message.state & 0x80) == 0x00)
+    {
+	/*
+	 * The four ten bit numbers are packed into the five byte array as follows:
+	 * [2|2|2|2][8][8][8][8]
+	 */
+	if ((_analog.index & 0x01) == 0x00)
 	{
-	    current->state  = analog_message_success;
-	    current         = next_message();
-	    _analog.current = 0;
-
-	    if (current == null) return;
-
-	    current->state  = analog_message_reading;
+	    _analog.temp_data[0] = (((_analog.adc_buffer[0] & 0x0c) << 4) |
+				    ((_analog.adc_buffer[2] & 0x0c) << 2));
+	    _analog.temp_data[1] = (_analog.adc_buffer[0] << 6) | (_analog.adc_buffer[1] >> 2);
+	    _analog.temp_data[2] = (_analog.adc_buffer[2] << 6) | (_analog.adc_buffer[3] >> 2);
 	}
+	else
+	{
+	    _analog.temp_data[0] |= (((_analog.adc_buffer[0] & 0x0c) >> 0) |
+				     ((_analog.adc_buffer[2] & 0x0c) >> 2));
+	    _analog.temp_data[3] = (_analog.adc_buffer[0] << 6) | (_analog.adc_buffer[1] >> 2);
+	    _analog.temp_data[4] = (_analog.adc_buffer[2] << 6) | (_analog.adc_buffer[3] >> 2);
+	}
+    }
+
+    if ((_analog.index & 0x01) == 0x01)
+    {
+	uint8 volatile	*sample = (uint8 volatile *) &(data->sample[_analog.index >> 1]);
+
+	for (uint8 i = 0; i < 5; ++i)
+	    sample[i] = _analog.temp_data[i];
     }
 
     /*
      * Queue another A/D conversion cycle.
      */
-    _analog.buffer[0] = 0xf0;
+    _analog.adc_buffer[0] = 0xf0;
 
-    if ((_analog.message.state & 0x80) == 0x00)
-	twi_queue_message(&(_analog.message));
+    if ((_analog.adc_message.state & 0x80) == 0x00)
+	twi_queue_message(&(_analog.adc_message));
 
-    AnalogData volatile	*data = (AnalogData volatile *) current->buffer;
-
-    switch (_analog.current)
+    /*
+     * For the first couple samples in a message we query the RTC, battery voltage and internal
+     * temperature.
+     */
+    switch (_analog.index)
     {
 	case 0:
 	{
@@ -192,25 +186,31 @@ static void analog_tick()
 	}
 	break;
     }
+
+    ++_analog.index;
 }
 /**************************************************************************************************/
 Error analog_init()
 {
-    _analog.message.buffer          = _analog.buffer;
-    _analog.message.address         = 0x42;
-    _analog.message.write_count     = 1;
-    _analog.message.read_count      = 8;
+    device_initialize(&_analog.device);
+
+    _analog.adc_message.buffer      = _analog.adc_buffer;
+    _analog.adc_message.address     = 0x42;
+    _analog.adc_message.write_count = 1;
+    _analog.adc_message.read_count  = 8;
 
     _analog.aux_message.buffer      = _analog.aux_buffer;
     _analog.aux_message.address     = 0xd0;
     _analog.aux_message.write_count = 1;
     _analog.aux_message.read_count  = 8;
 
-    _analog.head                    = null;
-    _analog.tail                    = null;
-    _analog.current                 = 0;
-    _analog.tick.function           = analog_tick;
-    _analog.prime                   = true;
+    _analog.current                 = null;
+    _analog.index                   = 0;
+
+    /*
+     * Register a timer tick handler.
+     */
+    _analog.tick.function = analog_tick;
 
     arch_tick_timer_add(&(_analog.tick));
 
@@ -252,52 +252,13 @@ Error analog_queue_message(AnalogMessage *message)
 {
     CheckB(message->read_count > 0);
 
-    message->next = null;
-
-    /*
-     * Add the message to the end of the message queue.  This must be an atomic operation as the
-     * message queue will be modified by the interrupt handler as well.
-     *
-     * FIX FIX FIX: I should be able to do this without turning off interrupts.
-     */
-    uint8 sreg_backup = SREG;
-    cli();
-    {
-	/*
-	 * Insert the message into the message queue.
-	 */
-	if (_analog.tail != null)
-	{
-	    message->state     = analog_message_queued;
-	    _analog.tail->next = message;
-	}
-	else
-	{
-	    message->state = analog_message_reading;
-	    _analog.head   = message;
-	    _analog.prime  = true;
-	}
-
-	_analog.tail = message;
-    }
-    SREG = sreg_backup;
+    message_queue((Message *) message, &_analog.device);
 
     return success;
-}
-/**************************************************************************************************/
-static bool analog_sleep_check(void *user_data)
-{
-    AnalogMessage	*message = (AnalogMessage *) user_data;
-
-    return ((message->state & 0x80) == 0x80);
 }
 /**************************************************************************************************/
 Error analog_wait_message(AnalogMessage *message)
 {
-    os_sleep_cpu(message, analog_sleep_check);
-
-    CheckB(message->state == analog_message_success);
-
-    return success;
+    return message_wait((Message *) message);
 }
 /**************************************************************************************************/

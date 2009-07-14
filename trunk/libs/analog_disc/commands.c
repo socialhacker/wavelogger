@@ -25,7 +25,13 @@
 
 SetupError();
 
-static uint16	_dac_offset[4];
+static uint16			_dac_offset[4];
+static AnalogData volatile	_data[2];
+static AnalogMessage		_message[2] =
+{
+    {{message_state_new, null}, (uint8 volatile *) &(_data[0]), 200},
+    {{message_state_new, null}, (uint8 volatile *) &(_data[1]), 200}
+};
 
 /*********************************************************************************************************************/
 Error search_command(uint argc, const char **argv)
@@ -45,24 +51,23 @@ Error search_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-static AnalogData volatile	data[2];
-static AnalogMessage		message[2] = {{(uint8 volatile *) &(data[0]), 200},
-					      {(uint8 volatile *) &(data[1]), 200}};
-
 Error sample_command(uint argc, const char **argv)
 {
     uint8	index = 0;
 
-    Check(analog_queue_message(&(message[0])));
-    Check(analog_queue_message(&(message[1])));
+    _message[0].read_count = 200;
+    _message[1].read_count = 200;
+
+    Check(analog_queue_message(&(_message[0])));
+    Check(analog_queue_message(&(_message[1])));
 
     while (!uart_character_ready())
     {
-	Check(analog_wait_message(&(message[index])));
+	Check(analog_wait_message(&(_message[index])));
 
 	for (uint i = 0; i < 100; ++i)
 	{
-	    AnalogSample	*sample = &(data[index].sample[i]);
+	    AnalogSample	*sample = &(_data[index].sample[i]);
 	    uint16		channel[4];
 
 	    channel[0] = ((uint16)(sample->data[0] & 0xc0)) << 2 | sample->data[1];
@@ -70,10 +75,61 @@ Error sample_command(uint argc, const char **argv)
 	    channel[2] = ((uint16)(sample->data[0] & 0x0c)) << 6 | sample->data[3];
 	    channel[3] = ((uint16)(sample->data[0] & 0x03)) << 8 | sample->data[4];
 
-	    write(PSTR("<data> %d %d %d %d\r\n"), channel[0], channel[1], channel[2], channel[3]);
+	    write(PSTR("<data> %d %d\r\n"), channel[0], channel[1]);
+	    write(PSTR("<data> %d %d\r\n"), channel[2], channel[3]);
 	}
 
-	Check(analog_queue_message(&(message[index])));
+	Check(analog_queue_message(&(_message[index])));
+
+	index = !index;
+    }
+
+    return success;
+}
+/*********************************************************************************************************************/
+Error average_command(uint argc, const char **argv)
+{
+    uint8	index = 0;
+    uint32	count;
+
+    CheckB(argc == 2);
+
+    /*
+     * Ensure that the count is an even number of samples.  And that it is no more than 200
+     * samples.
+     */
+    count = parse_number(argv[1]);
+    count = (count + 1) & ~1;
+    count = (count < 200) ? count : 200;
+
+    _message[0].read_count = count;
+    _message[1].read_count = count;
+
+    Check(analog_queue_message(&(_message[0])));
+    Check(analog_queue_message(&(_message[1])));
+
+    while (!uart_character_ready())
+    {
+	uint32	channel[2] = {0, 0};
+
+	Check(analog_wait_message(&(_message[index])));
+
+	for (uint i = 0; i < (count >> 1); ++i)
+	{
+	    AnalogSample	*sample = &(_data[index].sample[i]);
+
+	    channel[0] += ((uint16)(sample->data[0] & 0xc0)) << 2 | sample->data[1];
+	    channel[1] += ((uint16)(sample->data[0] & 0x30)) << 4 | sample->data[2];
+	    channel[0] += ((uint16)(sample->data[0] & 0x0c)) << 6 | sample->data[3];
+	    channel[1] += ((uint16)(sample->data[0] & 0x03)) << 8 | sample->data[4];
+	}
+
+	channel[0] /= count;
+	channel[1] /= count;
+
+	write(PSTR("<average of %ld samples> %ld %ld\r\n"), count, channel[0], channel[1]);
+
+	Check(analog_queue_message(&(_message[index])));
 
 	index = !index;
     }
@@ -87,14 +143,14 @@ Error dac_command(uint argc, const char **argv)
 
     if (argc == 3)
     {
-	uint8	dac   = parse_hex(argv[1]);
-	uint16	value = parse_hex(argv[2]);
+	uint8	dac   = parse_number(argv[1]);
+	uint16	value = parse_number(argv[2]);
 
 	return dac_write(dac, value);
     }
     else
     {
-	uint16	value = parse_hex(argv[1]);
+	uint16	value = parse_number(argv[1]);
 
 	return dac_write_all(value);
     }
@@ -106,7 +162,7 @@ Error adc_command(uint argc, const char **argv)
 
     if (argc == 2)
     {
-	uint8	index = parse_hex(argv[1]);
+	uint8	index = parse_number(argv[1]);
 	uint16	value;
 
 	Check(adc_read(index, &value));
@@ -130,7 +186,7 @@ Error gain_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
-    uint16	value = parse_hex(argv[1]);
+    uint16	value = parse_number(argv[1]);
 
     return gain_write_all(value);
 }
@@ -174,7 +230,7 @@ Error test_command(uint argc, const char **argv)
     CheckB(argc == 2);
 
     uint32	sum = 0;
-    uint8	adc = parse_hex(argv[1]);
+    uint8	adc = parse_number(argv[1]);
 
     Check(rtc_command(0, null));
 

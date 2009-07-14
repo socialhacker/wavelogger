@@ -22,6 +22,7 @@ products	:= shell cpu
 cpu[type]	:= program
 cpu[c_files]	+= cpu.c
 
+cpu[libs]	:= shell:shell_644
 cpu[libs]	+= os:os_644
 cpu[libs]	+= serial:serial_644
 cpu[libs]	+= eeprom:eeprom_644
@@ -47,7 +48,7 @@ cpu[c_flags]	:= -mmcu=atmega644p
 cpu[l_flags]	:= -mmcu=atmega644p
 
 shell[type]	:= program
-shell[c_files]	+= main.c
+shell[c_files]	+= main.c record.c
 
 shell[libs]	:= shell:shell_644
 shell[libs]	+= os:os_644
