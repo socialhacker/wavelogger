@@ -234,7 +234,7 @@ Error record_command(uint argc, const char **argv)
     uint32		last_meta_ticks = 0;
     uint8		index           = 0;
 
-    while (1)
+    while (!uart_character_ready())
     {
 	AnalogData	*analog_data = (AnalogData *) data[index];
 	uint32		start_ticks  = os_ticks();
@@ -312,7 +312,9 @@ Error record_command(uint argc, const char **argv)
   config_failure:	narrow = 2; wide = 1; goto failure;
 
   failure:
-    led_signal(narrow, wide);
+    while (!uart_character_ready())
+	led_signal(narrow, wide);
+
     return check_error;
 }
 /*********************************************************************************************************************/
