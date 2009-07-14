@@ -29,7 +29,7 @@ Error fs_init_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
-    BlockIndex	block = parse_hex(argv[1]);
+    BlockIndex	block = parse_number(argv[1]);
 
     return fs_init(0, block);
 }
@@ -246,7 +246,7 @@ Error debug_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
-    FSIndex	fs = parse_hex(argv[1]);
+    FSIndex	fs = parse_number(argv[1]);
     FileSystem	*file_system;
 
     Check(fs_get(fs, &file_system));

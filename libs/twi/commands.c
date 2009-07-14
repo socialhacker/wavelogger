@@ -39,7 +39,7 @@ Error message_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
-    uint8	address   = parse_hex(argv[1]) & ~0x01;
+    uint8	address   = parse_number(argv[1]) & ~0x01;
     uint8	buffer[4] = {0x11, 0x23, 0x47, 0x8f};
     TWIMessage	message   = {buffer, address, LENGTH(buffer), LENGTH(buffer)};
     Error	error     = success;

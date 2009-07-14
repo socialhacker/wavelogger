@@ -25,8 +25,8 @@ Error led_command(uint argc, const char **argv)
 {
     CheckB(argc == 3);
 
-    uint8	index = parse_hex(argv[1]);
-    uint8	value = parse_hex(argv[2]);
+    uint8	index = parse_number(argv[1]);
+    uint8	value = parse_number(argv[2]);
 
     if (index > 3)
 	index = 3;

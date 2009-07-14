@@ -26,7 +26,7 @@ Error avcc_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
-    bool	set = parse_hex(argv[1]);
+    bool	set = parse_number(argv[1]);
 
     return cylinder_avcc(set);
 }
@@ -35,7 +35,7 @@ Error pullups_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
-    bool	set = parse_hex(argv[1]);
+    bool	set = parse_number(argv[1]);
 
     return cylinder_pullups(set);
 }
