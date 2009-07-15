@@ -57,12 +57,12 @@ Once the FTDI driver has been installed and your computer rebooted, you will be 
 
 Make sure you replace `<ID>` with the correct unique identifier.  This command will allow you to communicate with the Wavelogger.  You can use exit the screen program with `<ctrl>A <ctrl>\`.
 
-To install CuteCom you will need the CuteCom source code.  It can be downloaded here: http://cutecom.sourceforge.net/.  You will also need to install the QT development libraries.  You will also need to install the cmake tool as that is what CuteCom uses to manage it's build process.  That can be done with:
+To install CuteCom you will need the CuteCom source code.  It can be downloaded here: http://cutecom.sourceforge.net/.  You will also need to install the QT development libraries.  You will also need to install the cmake tool as that is what CuteCom uses to manage its build process.  That can be done with:
 
   * `sudo port install qt4-mac-devel`
   * `sudo port install cmake`
 
-Installing qt4-mac-devel can take a very long time.  Once everything is installed you can build CuteCom by typing `cmake` in it's top level directory.
+Installing qt4-mac-devel can take a very long time.  Once everything is installed you can build CuteCom by typing `cmake` in its top level directory.
 
 To use the stripchart program you need to install python and a number of python libraries.  That can be done with the following commands:
 
