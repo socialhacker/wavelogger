@@ -5,6 +5,8 @@
 
 There are a number of tools that need to be installed on OS X in order to build and use the Wavelogger and it's associated tools.  There are three major categories of tools that are required.  First, tools needed to build the firmware and flash the device.  Second, tools that are needed to build the data processing code on a desktop.  And finally, tools that are needed to communicate with the Wavelogger for calibration and initial setup.  There are also some fundamental development tools that must be installed for all setups. 
 
+All of these steps assume that you are using the built in terminal program on OS X.  You can find the terminal program in Applications/Utilities/Terminal.
+
 = Mac OS X Development Tools =
 
 Firstly, XCode and MacPorts need to be installed.  XCode can be downloaded from http://developer.apple.com/technology/xcode.html.  Make sure you get a version of XCode that is compatible with your version of OS X.  MacPorts can be downloaded from http://www.macports.org/.
@@ -21,7 +23,7 @@ Once you have those tools you can checkout the Wavelogger source files.  That ca
 
   * `svn checkout http://wavelogger.googlecode.com/svn/trunk/ wavelogger`
 
-This will check out all of the files needed to build and use the wavelogger.
+This will check out all of the files needed to build and use the wavelogger.  The files will be placed in a directory called `wavelogger` in the current directory.
 
 = Firmware Tools =
 
