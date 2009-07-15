@@ -49,20 +49,40 @@ This will give you the usage output for `process`.
 
 = CommunicationTools =
 
-There are a number of ways to communicate with the Wavelogger.  You can use a general serial terminal program, such as CuteCom.  Or you can use the stripchart program found in wavelogger/tools/stripchart.  Either way you will need to install the USB Serial drivers from FTDI.  These drivers can be found here: http://www.ftdichip.com/Drivers/VCP.htm.
+There are a number of ways to communicate with the Wavelogger.  You can use a general serial terminal program, such as CuteCom.  You can use the stripchart program found in wavelogger/tools/stripchart.  Or you can use the builtin `screen` command.  Either way you will need to install the USB Serial drivers from FTDI.  These drivers can be found here: http://www.ftdichip.com/Drivers/VCP.htm.
 
-Once the FTDI driver has been installed and your computer rebooted, you will be able to communicate with the Wavelogger.  The FTDI drivers create a device file in the `/dev` directory for the USB connected Wavelogger.  The file will be called `/dev/tty.usbserial-<ID>`, where `<ID>` is a unique serial number for each Wavelogger.  You can test the Wavelogger and USB serial driver with the following command:
+Once the FTDI driver has been installed and your computer rebooted, you will be able to communicate with the Wavelogger.  The FTDI drivers create a device file in the `/dev` directory for the USB connected Wavelogger.  The file will be called `/dev/tty.usbserial-<ID>`, where `<ID>` is a unique serial number for each Wavelogger.
+
+== Screen ==
+
+You can test the Wavelogger and USB serial driver with the following command:
 
   * `screen /dev/tty.usbserial-<ID> 57600`
 
 Make sure you replace `<ID>` with the correct unique identifier.  This command will allow you to communicate with the Wavelogger.  You can use exit the screen program with `<ctrl>A <ctrl>\`.
 
-To install CuteCom you will need the CuteCom source code.  It can be downloaded here: http://cutecom.sourceforge.net/.  You will also need to install the QT development libraries.  You will also need to install the cmake tool as that is what CuteCom uses to manage its build process.  That can be done with:
+== CuteCom ==
+
+To install CuteCom you will need the CuteCom source code.  It can be downloaded here: http://cutecom.sourceforge.net/.  You will also need to install the QT development libraries and cmake before you can build and use CuteCom.  Installing qt4-mac-devel can take a very long time.  That can be done with:
 
   * `sudo port install qt4-mac-devel`
   * `sudo port install cmake`
 
-Installing qt4-mac-devel can take a very long time.  Once everything is installed you can build CuteCom by typing `cmake` in its top level directory.
+In order to build CuteCom you need to make a small change to the cmake configuration files.  The version of qt4 that was installed creates a qmake-mac instead of qmake executable, and this confuses cmake.  This can be fixed by editing the part of cmake that finds qmake.
+
+  * `sudo nano /opt/local/share/cmake-2.6/Modules/FindQt4.cmake`
+
+Once you have the file opened you should add qmake-mac to the list of qmakes that are searched for.  That list is on line 339.  Put qmake-mac right after qmake-qt4.
+
+You will also need to unpackage the source code you downloaded for CuteCom.  You can do this with the following command:
+
+  * `tar xvf ~/Downloads/cutecom-0.22.0.tar`
+
+That will unpackage the CuteCom source code into a directory called cutecom-0.22.0 in your current directory.
+
+Once everything is installed and patched you can build CuteCom by typing `cmake` in the CuteCom top level directory.
+
+== Stripchart ==
 
 To use the stripchart program you need to install python and a number of python libraries.  That can be done with the following commands:
 
