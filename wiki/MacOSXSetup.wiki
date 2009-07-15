@@ -1,5 +1,5 @@
+#summary How to setup a Macintosh to build the Wavelogger and associated tools.
 #labels Featured,Phase-Deploy
-#How to setup a Macintosh to build the Wavelogger and associated tools.
 
 = Introduction =
 
