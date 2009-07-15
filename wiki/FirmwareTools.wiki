@@ -1,5 +1,5 @@
 #labels Phase-Implementation,Phase-Deploy
-The build system provides a lot of functionality.  The following are some of the commands that can be used in the CPUDisc and PowerDisc directories.
+The build system provides a lot of functionality.  The following are some of the commands that can be used in the [CPUDisc] and PowerDisc directories.
 
   * `gmake`
     This builds the firmware in its default release mode.
