@@ -1,0 +1,1 @@
+CuteCom is a simple serial terminal emulator.  It allows you to talk to serial devices and record logs of the communications.
