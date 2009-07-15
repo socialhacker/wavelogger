@@ -41,6 +41,12 @@ The base install of OS X development tools satisfies the requirements for buildi
 
 From the tools directory you can build the desktop tools by typing `gmake`.  If you previously built the firmware the desktop tools will already be built.
 
+Once the tools have been built you can run the `process` program from the `wavelogger/tools/process` directory with the following command:
+
+  * `./release/process`
+
+This will give you the usage output for `process`.
+
 = Communication Tools =
 
 There are a number of ways to communicate with the Wavelogger.  You can use a general serial terminal program, such as CuteCom.  Or you can use the stripchart program found in wavelogger/tools/stripchart.  Either way you will need to install the USB Serial drivers from FTDI.  These drivers can be found here: http://www.ftdichip.com/Drivers/VCP.htm.
@@ -51,12 +57,19 @@ Once the FTDI driver has been installed and your computer rebooted, you will be 
 
 Make sure you replace `<ID>` with the correct unique identifier.  This command will allow you to communicate with the Wavelogger.  You can use exit the screen program with `<ctrl>A <ctrl>\`.
 
-To install CuteCom you will need the CuteCom source code.  It can be downloaded here: http://cutecom.sourceforge.net/.  You will also need to install the QT development libraries.  That can be done with:
+To install CuteCom you will need the CuteCom source code.  It can be downloaded here: http://cutecom.sourceforge.net/.  You will also need to install the QT development libraries.  You will also need to install the cmake tool as that is what CuteCom uses to manage it's build process.  That can be done with:
 
   * `sudo port install qt4-mac-devel`
+  * `sudo port install cmake`
+
+Installing qt4-mac-devel can take a very long time.  Once everything is installed you can build CuteCom by typing `cmake` in it's top level directory.
 
 To use the stripchart program you need to install python and a number of python libraries.  That can be done with the following commands:
 
   * `sudo port install py25-serial`
   * `sudo port install py25-wxpython`
   * `sudo port install py25-opengl`
+
+You can run stripchart with the following command in the wavelogger/tools/stripchart directory:
+
+  * `python2.5 stripchart`
