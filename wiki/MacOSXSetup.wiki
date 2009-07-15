@@ -25,7 +25,7 @@ Once you have those tools you can checkout the Wavelogger source files.  That ca
 
 This will check out all of the files needed to build and use the wavelogger.  The files will be placed in a directory called `wavelogger` in the current directory.
 
-= Firmware Tools =
+= FirmwareTools =
 
 To build the download the firmware you need to install a number of ports from MacPorts.  The latest version of avr-gcc that is in the MacPorts repository does not support the CPU on the main sampling board so you won't actually be able to build the firmware on OS X currently.  I imagine that a new version will be updated soon.  The command lines, for future reference, are:
 
@@ -35,7 +35,7 @@ To build the download the firmware you need to install a number of ports from Ma
 
 From the wavelogger directory you can build the firmware by typing `gmake`.
 
-= Desktop Tools =
+= DesktopTools =
 
 The base install of OS X development tools satisfies the requirements for building the desktop tools.
 
@@ -47,7 +47,7 @@ Once the tools have been built you can run the `process` program from the `wavel
 
 This will give you the usage output for `process`.
 
-= Communication Tools =
+= CommunicationTools =
 
 There are a number of ways to communicate with the Wavelogger.  You can use a general serial terminal program, such as CuteCom.  Or you can use the stripchart program found in wavelogger/tools/stripchart.  Either way you will need to install the USB Serial drivers from FTDI.  These drivers can be found here: http://www.ftdichip.com/Drivers/VCP.htm.
 
