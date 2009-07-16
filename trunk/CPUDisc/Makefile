@@ -20,7 +20,7 @@ depth		:= ..
 products	:= shell cpu
 
 cpu[type]	:= program
-cpu[c_files]	+= cpu.c
+cpu[c_files]	+= cpu.c record.c
 
 cpu[libs]	:= shell:shell_644
 cpu[libs]	+= os:os_644
