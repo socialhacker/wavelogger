@@ -24,4 +24,4 @@ All of the above steps may not be required, but I have verified that these steps
   * `handshake..: none`
   * `open for...: reading and writing`
 
-Furthermore, If you have trouble communicating with the wavelogger, try setting the character delay parameter in the lower right corner to 0ms.
+Furthermore, If you have trouble communicating with the wavelogger, try setting the character delay parameter in the lower right corner to 0ms.  You can figure out what the device file should be by typing `ls /dev/tty*` in a terminal.  On OS X it will be something like `/dev/tty.usbserial-<ID>` where `<ID>` is a unique 8 digit serial number.  On Linux it will be `/dev/ttyUSB0`.  It might be `/dev/ttyUSB1` or similar if you have multiple USB-serial adapters connected to your system.
