@@ -86,7 +86,7 @@ Once everything is installed and patched you can build CuteCom from the cutecom-
   * `make`
   * `sudo make install`
 
-You can then find CuteCom in the Applications folder in the Finder.
+You can then find CuteCom in the Applications folder in the Finder.  You can find out more about using CuteCom from the CuteCom page.
 
 == Stripchart ==
 
