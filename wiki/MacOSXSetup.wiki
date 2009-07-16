@@ -80,7 +80,13 @@ You will also need to unpackage the source code you downloaded for CuteCom.  You
 
 That will unpackage the CuteCom source code into a directory called cutecom-0.22.0 in your current directory.
 
-Once everything is installed and patched you can build CuteCom by typing `cmake` in the CuteCom top level directory.
+Once everything is installed and patched you can build CuteCom from the cutecom-0.22.0 directory by typing:
+
+  * `cmake .`
+  * `make`
+  * `sudo make install`
+
+You can then find CuteCom in the Applications folder in the Finder.
 
 == Stripchart ==
 
