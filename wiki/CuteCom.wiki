@@ -1,1 +1,28 @@
+= Introduction =
+
 CuteCom is a simple serial terminal emulator.  It allows you to talk to serial devices and record logs of the communications.
+
+= Usage =
+
+CuteComs GUI allows you to select the serial port and port parameters you wish to use.  It also lets you log a copy of the session to a file.  I have found that you need to enable logging before opening the device, otherwise the log ends up empty.  Also, once you are done with your session, quitting CuteCom seems to be the trigger to write the log file to disc.  So the steps to use it to log a session are:
+
+  # Run CuteCom
+  # Configure port and port parameters
+  # Open device
+  # Enable logging (select check box next to "Log to:"
+  # Communicate with Wavelogger
+  # Close device
+  # Quit CuteCom
+
+All of the above steps may not be required, but I have verified that these steps do work in this order.  The port and port parameters for the wavelogger are:
+
+  * `device.....: /dev/tty.usbserial-<ID>` for Mac OS X
+  * `device.....: /dev/ttyUSB0` for Linux
+  * `parity.....: none`
+  * `baud rate..: 57600`
+  * `data bits..: 8`
+  * `stop bits..: 1`
+  * `handshake..: none`
+  * `open for...: reading and writing`
+
+Furthermore, If you have trouble communicating with the wavelogger, try setting the character delay parameter in the lower right corner to 0ms.
