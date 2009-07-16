@@ -19,6 +19,7 @@
 
 #include "libs/analog_disc/analog_disc.h"
 #include "libs/file_system/file_system.h"
+#include "libs/serial/serial.h"
 #include "libs/dac/dac.h"
 #include "libs/led/led.h"
 #include "libs/gain/gain.h"
