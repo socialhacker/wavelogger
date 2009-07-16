@@ -16,8 +16,7 @@ CuteComs GUI allows you to select the serial port and port parameters you wish t
 
 All of the above steps may not be required, but I have verified that these steps do work in this order.  The port and port parameters for the wavelogger are:
 
-  * `device.....: /dev/tty.usbserial-<ID>` for Mac OS X
-  * `device.....: /dev/ttyUSB0` for Linux
+  * `device.....: /dev/tty.usbserial-<ID> or /dev/ttyUSB0`
   * `parity.....: none`
   * `baud rate..: 57600`
   * `data bits..: 8`
