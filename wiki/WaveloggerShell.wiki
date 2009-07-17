@@ -9,8 +9,8 @@ The Wavelogger shell can be accessed over a serial connection using Screen, Cute
   * `gain <value>`
     The value parameter can be from 0 to 255.  The hardware is set up to have a gain
     specified by the following equations.
-    <br>Gain = 1 + ((1000060 - value * 3906.25) / 1050)
-    <br>Gain ~ 953.44 - value * 3.72
+    <br>`Gain = 1 + ((1000060 - value * 3906.25) / 1050)`
+    <br>`Gain ~ 953.44 - value * 3.72`
     <br>Thus the gain can range from about 5x to about 950x in 3.72x increments.  The
     manufacturer of the amplifier recommends that the gain be set no lower than 9x
     however.
