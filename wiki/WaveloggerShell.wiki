@@ -1,0 +1,50 @@
+#summary How to use the wavelogger over a serial connection
+#labels Featured,Phase-Deploy
+= Introduction =
+
+The Wavelogger shell can be accessed over a serial connection using Screen, CuteCom or Stripchart.  The shell is a simple command line based interactive user interface that allows you to calibrate the Wavelogger, as well as set system parameter, such as the date and time, and debug the hardware and software.
+
+= Calibration =
+
+  * `gain <value>`
+    The value parameter can be from 0 to 255.  The hardware is set up to have a gain
+    specified by the following equations.
+    <br>Gain = 1 + ((1000060 - value * 3906.25) / 1050)
+    <br>Gain ~ 953.44 - value * 3.72
+    <br>Thus the gain can range from about 5x to about 950x in 3.72x increments.  The
+    manufacturer of the amplifier recommends that the gain be set no lower than 9x
+    however.
+
+  * `search`
+    Search will do a binary search to determine the correct offset voltage to apply to
+    the amplifiers.  This is used to compensate for unbalanced bridges.  It should be run
+    once before sampling from the bridge.
+
+  * `average <samples>`
+    Average will continuously sample and report averages every `samples/100` seconds.
+    The `<samples>` parameter can be from 1 to 200.
+
+= Real Time Clock =
+
+  * `rtc`
+    Print out the current value of the real time clock.
+
+  * `rtc_date <day> <month> <year>`
+    Set the real time clocks date fields.  The day is from 1 to 31, the month is from 1
+    to 12 and the year is from 00 to 99.
+
+  * `rtc_time <hour> <minute> <second>`
+    Set the real time clocks time fields.  The hour is from 0 to 23, the minute is from
+    0 to 59 and the second is from 0 to 59.
+
+= File System =
+
+  * `ls`
+     List the contents of the current directory.
+
+  * `cd <directory>`
+    Change directories to the directory specified by `<directory>`.  `<directory>` must
+    be a directory in the current directory or `..` for the parent directory.
+
+  * `cat <file>`
+    Print out the contents of a file to the console.
