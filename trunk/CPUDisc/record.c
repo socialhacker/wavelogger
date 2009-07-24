@@ -102,17 +102,22 @@ static Error read_config_data(const char *filename, ConfigData *config_data)
     return check_error;
 }
 /*********************************************************************************************************************/
-static void wait_on_switch()
+static bool wait_on_switch()
 {
     uint8	count = 0;
 
     while (count < 10)
     {
+	if (uart_character_ready())
+	    return true;
+
 	if (PINC & 0x10)
 	    ++count;
 	else
 	    count = 0;
     }
+
+    return false;
 }
 /*********************************************************************************************************************/
 static Error offset_search(InfoData * info)
@@ -133,7 +138,7 @@ static Error offset_search(InfoData * info)
     return success;
 }
 /*********************************************************************************************************************/
-static Error check_file_position(FileIndex meta, uint32 *file_position)
+static Error check_file_position(FileIndex meta, uint32 *file_position, bool *quit)
 {
     Check(fs_file_read(meta, file_position, sizeof(*file_position), null));
 
@@ -144,7 +149,7 @@ static Error check_file_position(FileIndex meta, uint32 *file_position)
 	 * switch before we start writing to the data file at its beginning.
 	 */
 	led_flash(2, true);
-	wait_on_switch();
+	*quit = wait_on_switch();
 	led_flash(2, true);
 
 	*file_position = 0;
@@ -183,6 +188,9 @@ static AnalogMessage	message[2] =
 Error record_command(uint argc, const char **argv)
 {
     Error	check_error = success;
+    uint8	count       = 0;
+    uint8	narrow[10]  = {4, 3, 3, 3, 3, 3, 3, 2, 2, 2};
+    uint8	wide[10]    = {1, 6, 5, 4, 3, 2, 1, 3, 2, 1};
 
     for (uint8 i = 0; i < 2; ++i)
 	for (uint16 j = 0; j < sizeof(data[0]); ++j)
@@ -208,9 +216,17 @@ Error record_command(uint argc, const char **argv)
      */
     {
 	uint32		file_position;
+	bool		quit = false;
 
-	CheckCleanup(check_file_position(meta, &file_position), position_failure);
+	CheckCleanup(check_file_position(meta, &file_position, &quit), position_failure);
 	CheckCleanup(fs_file_seek(file, file_position, seek_type_beginning), seek_failure);
+
+	if (quit)
+	{
+	    fs_file_close(file);
+	    fs_file_close(meta);
+	    return success;
+	}
     }
 
     /*
@@ -296,25 +312,25 @@ Error record_command(uint argc, const char **argv)
 	    rtc_reset_stack();
     }
 
+    fs_file_close(file);
+    fs_file_close(meta);
     return success;
 
-    uint8	narrow;
-    uint8	wide;
+  logging_failure:	++count;
+  queue_failure:	++count;
+  info_data_failure:	++count;
+  search_failure:	++count;
+  seek_failure:		++count;
+  position_failure:	++count;
+  gain_failure:		++count; fs_file_close(file);
+  open_failure:		++count; fs_file_close(meta);
+  meta_failure:		++count;
+  config_failure:	++count;
+    if (count > 10)
+	count = 10;
 
-  logging_failure:	narrow = 4; wide = 1; goto failure;
-  queue_failure:	narrow = 3; wide = 6; goto failure;
-  info_data_failure:	narrow = 3; wide = 5; goto failure;
-  search_failure:	narrow = 3; wide = 4; goto failure;
-  gain_failure:		narrow = 3; wide = 3; goto failure;
-  seek_failure:		narrow = 3; wide = 2; goto failure;
-  position_failure:	narrow = 3; wide = 1; goto failure;
-  open_failure:		narrow = 2; wide = 3; goto failure;
-  meta_failure:		narrow = 2; wide = 2; goto failure;
-  config_failure:	narrow = 2; wide = 1; goto failure;
-
-  failure:
     while (!uart_character_ready())
-	led_signal(narrow, wide);
+	led_signal(narrow[count - 1], wide[count - 1]);
 
     return check_error;
 }
