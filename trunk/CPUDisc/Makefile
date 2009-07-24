@@ -17,35 +17,7 @@
 #
 
 depth		:= ..
-products	:= shell cpu
-
-cpu[type]	:= program
-cpu[c_files]	+= cpu.c record.c
-
-cpu[libs]	:= shell:shell_644
-cpu[libs]	+= os:os_644
-cpu[libs]	+= serial:serial_644
-cpu[libs]	+= eeprom:eeprom_644
-cpu[libs]	+= types:types_644
-cpu[libs]	+= led:led_644
-cpu[libs]	+= cylinder:cylinder_644
-cpu[libs]	+= analog_disc:analog_644
-cpu[libs]	+= gain:gain_644
-cpu[libs]	+= adc:adc_644
-cpu[libs]	+= dac:dac_644
-cpu[libs]	+= rtc:rtc_644
-cpu[libs]	+= twi:twi_644
-cpu[libs]	+= spi:spi_644
-cpu[libs]	+= sdcard:sdcard_644
-cpu[libs]	+= block:block_644
-cpu[libs]	+= partition:partition_644
-cpu[libs]	+= buffer:buffer_644
-cpu[libs]	+= power:power_644
-cpu[libs]	+= error:error_644
-cpu[libs]	+= file_system:file_system_644
-
-cpu[c_flags]	:= -mmcu=atmega644p
-cpu[l_flags]	:= -mmcu=atmega644p
+products	:= shell
 
 shell[type]	:= program
 shell[c_files]	+= main.c record.c
