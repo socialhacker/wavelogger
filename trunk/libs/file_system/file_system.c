@@ -256,6 +256,7 @@ Error fs_file_open(FSIndex fs, DirEntry *entry, FileIndex *file)
 	}
     }
 
+    Check(failure);
     return failure;
 }
 /*********************************************************************************************************************/
@@ -378,6 +379,9 @@ Error fs_file_read(FileIndex file, void *data, uint length, uint *read)
     uint	_read             = 0;
     uint8	*_data		  = (uint8 *) data;
 
+    if (read)
+	*read = 0;
+
     while (length > 0)
     {
 	/*
@@ -428,10 +432,10 @@ Error fs_file_read(FileIndex file, void *data, uint length, uint *read)
 	    _file[file].node.current     = fs_next_cluster(fs, _file[file].node.current);
 	    _file[file].cluster_position = 0;
 	}
-    }
 
-    if (read)
-	*read = _read;
+	if (read)
+	    *read = _read;
+    }
 
     return success;
 }
