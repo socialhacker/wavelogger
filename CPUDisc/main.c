@@ -228,7 +228,21 @@ const ShellCommand	*shell_command_table[] PROGMEM =
 /*********************************************************************************************************************/
 int main(void)
 {
-    os_boot(boot_module_table, LENGTH(boot_module_table));
+    Error	check_error = success;
+    uint8	narrow;
+    uint8	wide;
+
+    os_sleep(100);
+
+    CheckCleanup(os_boot(boot_module_table, LENGTH(boot_module_table)), boot_failure);
+    CheckCleanup(record_command(0, null), record_failure);
+
+  record_failure:	narrow = 2; wide = 1; goto failure;
+  boot_failure:		narrow = 1; wide = os_boot_index(); goto failure;
+  failure:
+    while (!uart_character_ready())
+	led_signal(narrow, wide);
+
     error_stack_print();
 
     write(PSTR("\r\n\r\nWavelogger v4.0\r\n"));
