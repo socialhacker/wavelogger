@@ -20,6 +20,9 @@
 #include "libs/shell/shell.h"
 
 Error sd_init_command(uint argc, const char **argv);
-Error sd_csd_command(uint argc, const char **argv);
+Error sd_csd_command (uint argc, const char **argv);
+
+extern const ShellCommand shell_command_sd_init   PROGMEM;
+extern const ShellCommand shell_command_sd_csd    PROGMEM;
 
 #endif //__sdcard_commands_h__

@@ -92,3 +92,6 @@ Error dump_command(uint argc, const char **argv)
     return 0;
 }
 /*********************************************************************************************************************/
+const ShellCommand shell_command_read_bw   PROGMEM = {"read_bw",   read_bw_command};
+const ShellCommand shell_command_dump      PROGMEM = {"dump",      dump_command};
+/*********************************************************************************************************************/

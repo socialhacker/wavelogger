@@ -19,7 +19,7 @@
 
 #include "libs/shell/shell.h"
 
-Error battery_command(uint argc, const char **argv);
-Error temp_command(uint argc, const char **argv);
+extern const ShellCommand shell_command_battery   PROGMEM;
+extern const ShellCommand shell_command_temp      PROGMEM;
 
 #endif //__power_commands_h__

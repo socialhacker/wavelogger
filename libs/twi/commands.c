@@ -23,19 +23,19 @@
 SetupError();
 
 /*********************************************************************************************************************/
-Error release_command(uint argc, const char **argv)
+static Error release_command(uint argc, const char **argv)
 {
     twi_release();
     return success;
 }
 /*********************************************************************************************************************/
-Error master_command(uint argc, const char **argv)
+static Error master_command(uint argc, const char **argv)
 {
     twi_initialize(true);
     return success;
 }
 /*********************************************************************************************************************/
-Error message_command(uint argc, const char **argv)
+static Error message_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
@@ -65,7 +65,7 @@ Error message_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error twi_debug_command(uint argc, const char **argv)
+static Error twi_debug_command(uint argc, const char **argv)
 {
     const TWI	*twi = twi_get();
 
@@ -86,4 +86,9 @@ Error twi_debug_command(uint argc, const char **argv)
 
     return success;
 }
+/*********************************************************************************************************************/
+const ShellCommand shell_command_release   PROGMEM = {"release",   release_command};
+const ShellCommand shell_command_master    PROGMEM = {"master",    master_command};
+const ShellCommand shell_command_message   PROGMEM = {"message",   message_command};
+const ShellCommand shell_command_twi       PROGMEM = {"twi",       twi_debug_command};
 /*********************************************************************************************************************/

@@ -21,7 +21,7 @@
 SetupError();
 
 /*********************************************************************************************************************/
-Error led_command(uint argc, const char **argv)
+static Error led_command(uint argc, const char **argv)
 {
     CheckB(argc == 3);
 
@@ -35,4 +35,6 @@ Error led_command(uint argc, const char **argv)
 
     return success;
 }
+/*********************************************************************************************************************/
+const ShellCommand shell_command_led       PROGMEM = {"led",       led_command};
 /*********************************************************************************************************************/

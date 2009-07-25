@@ -45,7 +45,7 @@ Error rtc_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error rtc_set_date_command(uint argc, const char **argv)
+static Error rtc_set_date_command(uint argc, const char **argv)
 {
     CheckB(argc == 4);
 
@@ -66,7 +66,7 @@ Error rtc_set_date_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error rtc_set_time_command(uint argc, const char **argv)
+static Error rtc_set_time_command(uint argc, const char **argv)
 {
     CheckB(argc == 4);
 
@@ -88,7 +88,7 @@ Error rtc_set_time_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error reset_command(uint argc, const char **argv)
+static Error reset_command(uint argc, const char **argv)
 {
     Check(rtc_reset_stack());
 
@@ -98,4 +98,9 @@ Error reset_command(uint argc, const char **argv)
      */
     return failure;
 }
+/*********************************************************************************************************************/
+const ShellCommand shell_command_rtc       PROGMEM = {"rtc",       rtc_command};
+const ShellCommand shell_command_rtc_date  PROGMEM = {"rtc_date",  rtc_set_date_command};
+const ShellCommand shell_command_rtc_time  PROGMEM = {"rtc_time",  rtc_set_time_command};
+const ShellCommand shell_command_reset     PROGMEM = {"reset",     reset_command};
 /*********************************************************************************************************************/

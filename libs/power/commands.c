@@ -21,7 +21,7 @@
 SetupError();
 
 /*********************************************************************************************************************/
-Error battery_command(uint argc, const char **argv)
+static Error battery_command(uint argc, const char **argv)
 {
     uint16	battery;
 
@@ -32,7 +32,7 @@ Error battery_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error temp_command(uint argc, const char **argv)
+static Error temp_command(uint argc, const char **argv)
 {
     uint16	temp;
 
@@ -47,4 +47,7 @@ Error temp_command(uint argc, const char **argv)
 
     return success;
 }
+/*********************************************************************************************************************/
+const ShellCommand shell_command_battery   PROGMEM = {"battery",   battery_command};
+const ShellCommand shell_command_temp      PROGMEM = {"temp",      temp_command};
 /*********************************************************************************************************************/

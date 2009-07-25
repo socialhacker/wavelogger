@@ -18,17 +18,18 @@
 
 #include "libs/shell/commands.h"
 #include "libs/stdio/write.h"
+#include "libs/error/error.h"
 #include "libs/os/os.h"
 
 /*********************************************************************************************************************/
-Error time_command(uint argc, const char **argv)
+static Error time_command(uint argc, const char **argv)
 {
     write(PSTR("Clock: %ld\r\n"), os_ticks());
 
     return success;
 }
 /*********************************************************************************************************************/
-Error stack_command(uint argc, const char **argv)
+static Error stack_command(uint argc, const char **argv)
 {
     extern uint16 __attribute__((weak))	__stack;
     extern uint16 __attribute__((weak))	__bss_end;
@@ -51,9 +52,13 @@ Error stack_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error status_command(uint argc, const char **argv)
+static Error status_command(uint argc, const char **argv)
 {
     write(PSTR("Boot index: %d\r\n"), os_boot_index());
     return success;
 }
+/*********************************************************************************************************************/
+const ShellCommand shell_command_time      PROGMEM = {"time",      time_command};
+const ShellCommand shell_command_stack     PROGMEM = {"stack",     stack_command};
+const ShellCommand shell_command_status    PROGMEM = {"status",    status_command};
 /*********************************************************************************************************************/

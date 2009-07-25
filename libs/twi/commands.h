@@ -19,9 +19,9 @@
 
 #include "libs/shell/shell.h"
 
-Error release_command(uint argc, const char **argv);
-Error master_command (uint argc, const char **argv);
-Error message_command(uint argc, const char **argv);
-Error twi_debug_command(uint argc, const char **argv);
+extern const ShellCommand	shell_command_release   PROGMEM;
+extern const ShellCommand	shell_command_master    PROGMEM;
+extern const ShellCommand	shell_command_message   PROGMEM;
+extern const ShellCommand	shell_command_twi       PROGMEM;
 
 #endif //__twi_commands_h__

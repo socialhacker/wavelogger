@@ -19,6 +19,6 @@
 
 #include "libs/shell/shell.h"
 
-Error led_command(uint argc, const char **argv);
+extern const ShellCommand shell_command_led       PROGMEM;
 
 #endif //__led_commands_h__

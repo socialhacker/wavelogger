@@ -34,7 +34,7 @@ static AnalogMessage		_message[2] =
 };
 
 /*********************************************************************************************************************/
-Error search_command(uint argc, const char **argv)
+static Error search_command(uint argc, const char **argv)
 {
     for (uint8 i = 0; i < 4; ++i)
     {
@@ -51,7 +51,7 @@ Error search_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error sample_command(uint argc, const char **argv)
+static Error sample_command(uint argc, const char **argv)
 {
     uint8	index = 0;
 
@@ -87,7 +87,7 @@ Error sample_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error average_command(uint argc, const char **argv)
+static Error average_command(uint argc, const char **argv)
 {
     uint8	index = 0;
     uint32	count;
@@ -137,7 +137,7 @@ Error average_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error dac_command(uint argc, const char **argv)
+static Error dac_command(uint argc, const char **argv)
 {
     CheckB(argc >= 2 && argc <= 3);
 
@@ -156,7 +156,7 @@ Error dac_command(uint argc, const char **argv)
     }
 }
 /*********************************************************************************************************************/
-Error adc_command(uint argc, const char **argv)
+static Error adc_command(uint argc, const char **argv)
 {
     CheckB(argc >= 1 && argc <= 2);
 
@@ -182,7 +182,7 @@ Error adc_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error gain_command(uint argc, const char **argv)
+static Error gain_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
@@ -191,7 +191,7 @@ Error gain_command(uint argc, const char **argv)
     return gain_write_all(value);
 }
 /*********************************************************************************************************************/
-Error up_command(uint argc, const char **argv)
+static Error up_command(uint argc, const char **argv)
 {
     for (uint8 i = 0; i < 4; ++i)
     {
@@ -208,7 +208,7 @@ Error up_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error down_command(uint argc, const char **argv)
+static Error down_command(uint argc, const char **argv)
 {
     for (uint8 i = 0; i < 4; ++i)
     {
@@ -225,7 +225,7 @@ Error down_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error test_command(uint argc, const char **argv)
+static Error test_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
@@ -249,4 +249,14 @@ Error test_command(uint argc, const char **argv)
 
     return success;
 }
+/*********************************************************************************************************************/
+const ShellCommand shell_command_gain      PROGMEM = {"gain",      gain_command};
+const ShellCommand shell_command_adc       PROGMEM = {"adc",       adc_command};
+const ShellCommand shell_command_dac       PROGMEM = {"dac",       dac_command};
+const ShellCommand shell_command_search    PROGMEM = {"search",    search_command};
+const ShellCommand shell_command_sample    PROGMEM = {"sample",    sample_command};
+const ShellCommand shell_command_average   PROGMEM = {"average",   average_command};
+const ShellCommand shell_command_test      PROGMEM = {"test",      test_command};
+const ShellCommand shell_command_up        PROGMEM = {"up",        up_command};
+const ShellCommand shell_command_down      PROGMEM = {"down",      down_command};
 /*********************************************************************************************************************/

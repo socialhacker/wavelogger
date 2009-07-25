@@ -25,7 +25,7 @@
 SetupError();
 
 /*********************************************************************************************************************/
-Error fs_init_command(uint argc, const char **argv)
+static Error fs_init_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
@@ -34,7 +34,7 @@ Error fs_init_command(uint argc, const char **argv)
     return fs_init(0, block);
 }
 /*********************************************************************************************************************/
-Error ls_command(uint argc, const char **argv)
+static Error ls_command(uint argc, const char **argv)
 {
     DirIndex	index;
     DirEntry	*entry;
@@ -79,7 +79,7 @@ static Error file_open(const char *filename, FileIndex *file)
     return check_error;
 }
 /*********************************************************************************************************************/
-Error cd_command(uint argc, const char **argv)
+static Error cd_command(uint argc, const char **argv)
 {
     Error	check_error;
 
@@ -188,14 +188,14 @@ static Error show_file(const char *filename, void (*show)(uint32 address, uint8 
     return success;
 }
 /*********************************************************************************************************************/
-Error cat_command(uint argc, const char **argv)
+static Error cat_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
     Check(show_file(argv[1], show_char_line));
     return success;
 }
 /*********************************************************************************************************************/
-Error hexdump_command(uint argc, const char **argv)
+static Error hexdump_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
     Check(show_file(argv[1], show_hex_line));
@@ -203,7 +203,7 @@ Error hexdump_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error write_command(uint argc, const char **argv)
+static Error write_command(uint argc, const char **argv)
 {
     bool	done  = false;
     uint32	total = 0;
@@ -242,7 +242,7 @@ Error write_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
-Error debug_command(uint argc, const char **argv)
+static Error debug_command(uint argc, const char **argv)
 {
     CheckB(argc == 2);
 
@@ -288,7 +288,7 @@ static void show_partition(uint8 index, uint16 offset)
     write(PSTR("    length  %lx\r\n"), buffer_uint32(offset + 0x0c));
 }
 /*********************************************************************************************************************/
-Error partition_command(uint argc, const char **argv)
+static Error partition_command(uint argc, const char **argv)
 {
     Check(buffer_set_address(0, 0));
     CheckB(buffer_uint16(0x1fe) == 0xaa55);
@@ -300,4 +300,13 @@ Error partition_command(uint argc, const char **argv)
 
     return success;
 }
+/*********************************************************************************************************************/
+const ShellCommand shell_command_fs_init   PROGMEM = {"fs_init",   fs_init_command};
+const ShellCommand shell_command_ls        PROGMEM = {"ls",        ls_command};
+const ShellCommand shell_command_cd        PROGMEM = {"cd",        cd_command};
+const ShellCommand shell_command_cat       PROGMEM = {"cat",       cat_command};
+const ShellCommand shell_command_hexdump   PROGMEM = {"hexdump",   hexdump_command};
+const ShellCommand shell_command_write     PROGMEM = {"write",     write_command};
+const ShellCommand shell_command_debug     PROGMEM = {"debug",     debug_command};
+const ShellCommand shell_command_partition PROGMEM = {"partition", partition_command};
 /*********************************************************************************************************************/

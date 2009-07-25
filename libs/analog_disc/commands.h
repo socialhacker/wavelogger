@@ -19,14 +19,14 @@
 
 #include "libs/shell/shell.h"
 
-Error search_command(uint argc, const char **argv);
-Error sample_command(uint argc, const char **argv);
-Error average_command(uint argc, const char **argv);
-Error gain_command(uint argc, const char **argv);
-Error dac_command(uint argc, const char **argv);
-Error adc_command(uint argc, const char **argv);
-Error up_command(uint argc, const char **argv);
-Error down_command(uint argc, const char **argv);
-Error test_command(uint argc, const char **argv);
+extern const ShellCommand	shell_command_gain      PROGMEM;
+extern const ShellCommand	shell_command_adc       PROGMEM;
+extern const ShellCommand	shell_command_dac       PROGMEM;
+extern const ShellCommand	shell_command_search    PROGMEM;
+extern const ShellCommand	shell_command_sample    PROGMEM;
+extern const ShellCommand	shell_command_average   PROGMEM;
+extern const ShellCommand	shell_command_test      PROGMEM;
+extern const ShellCommand	shell_command_up        PROGMEM;
+extern const ShellCommand	shell_command_down      PROGMEM;
 
 #endif //__analog_disc_commands_h__
