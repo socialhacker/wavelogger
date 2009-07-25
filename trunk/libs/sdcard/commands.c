@@ -51,3 +51,6 @@ Error sd_csd_command(uint argc, const char **argv)
     return success;
 }
 /*********************************************************************************************************************/
+const ShellCommand shell_command_sd_init   PROGMEM = {"sd_init",   sd_init_command};
+const ShellCommand shell_command_sd_csd    PROGMEM = {"sd_csd",    sd_csd_command};
+/*********************************************************************************************************************/

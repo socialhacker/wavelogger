@@ -19,13 +19,13 @@
 
 #include "libs/shell/shell.h"
 
-Error fs_init_command(uint argc, const char **argv);
-Error ls_command(uint argc, const char **argv);
-Error cd_command(uint argc, const char **argv);
-Error cat_command(uint argc, const char **argv);
-Error hexdump_command(uint argc, const char **argv);
-Error write_command(uint argc, const char **argv);
-Error debug_command(uint argc, const char **argv);
-Error partition_command(uint argc, const char **argv);
+extern const ShellCommand	shell_command_fs_init	PROGMEM;
+extern const ShellCommand	shell_command_ls	PROGMEM;
+extern const ShellCommand	shell_command_cd	PROGMEM;
+extern const ShellCommand	shell_command_cat	PROGMEM;
+extern const ShellCommand	shell_command_hexdump	PROGMEM;
+extern const ShellCommand	shell_command_write	PROGMEM;
+extern const ShellCommand	shell_command_debug	PROGMEM;
+extern const ShellCommand	shell_command_partition	PROGMEM;
 
 #endif //__file_system_commands_h__

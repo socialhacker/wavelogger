@@ -121,108 +121,42 @@ const BootModule	*boot_module_table[] PROGMEM =
     &boot_module_file_system
 };
 /*********************************************************************************************************************/
-const ShellCommand shell_command_time      PROGMEM = {"time",      time_command};
-const ShellCommand shell_command_stack     PROGMEM = {"stack",     stack_command};
-const ShellCommand shell_command_status    PROGMEM = {"status",    status_command};
-
-const ShellCommand shell_command_led       PROGMEM = {"led",       led_command};
-
-/*
- * Cylinder commands
- */
-const ShellCommand shell_command_release   PROGMEM = {"release",   release_command};
-const ShellCommand shell_command_master    PROGMEM = {"master",    master_command};
-const ShellCommand shell_command_message   PROGMEM = {"message",   message_command};
-const ShellCommand shell_command_twi       PROGMEM = {"twi",       twi_debug_command};
-const ShellCommand shell_command_avcc      PROGMEM = {"avcc",      avcc_command};
-
-/*
- * SDCard commands
- */
-const ShellCommand shell_command_sd_csd    PROGMEM = {"sd_csd",    sd_csd_command};
-
-/*
- * Filesystem commands
- */
-const ShellCommand shell_command_ls        PROGMEM = {"ls",        ls_command};
-const ShellCommand shell_command_cd        PROGMEM = {"cd",        cd_command};
-const ShellCommand shell_command_cat       PROGMEM = {"cat",       cat_command};
-const ShellCommand shell_command_hexdump   PROGMEM = {"hexdump",   hexdump_command};
-const ShellCommand shell_command_dump      PROGMEM = {"dump",      dump_command};
-const ShellCommand shell_command_write     PROGMEM = {"write",     write_command};
-const ShellCommand shell_command_debug     PROGMEM = {"debug",     debug_command};
-const ShellCommand shell_command_partition PROGMEM = {"partition", partition_command};
-
-/*
- * Analog board commands
- */
-const ShellCommand shell_command_gain      PROGMEM = {"gain",      gain_command};
-const ShellCommand shell_command_adc       PROGMEM = {"adc",       adc_command};
-const ShellCommand shell_command_dac       PROGMEM = {"dac",       dac_command};
-const ShellCommand shell_command_search    PROGMEM = {"search",    search_command};
-const ShellCommand shell_command_sample    PROGMEM = {"sample",    sample_command};
-const ShellCommand shell_command_average   PROGMEM = {"average",   average_command};
-const ShellCommand shell_command_test      PROGMEM = {"test",      test_command};
-const ShellCommand shell_command_up        PROGMEM = {"up",        up_command};
-const ShellCommand shell_command_down      PROGMEM = {"down",      down_command};
-
-/*
- * Power board commands
- */
-const ShellCommand shell_command_battery   PROGMEM = {"battery",   battery_command};
-const ShellCommand shell_command_temp      PROGMEM = {"temp",      temp_command};
-const ShellCommand shell_command_rtc       PROGMEM = {"rtc",       rtc_command};
-const ShellCommand shell_command_rtc_date  PROGMEM = {"rtc_date",  rtc_set_date_command};
-const ShellCommand shell_command_rtc_time  PROGMEM = {"rtc_time",  rtc_set_time_command};
-const ShellCommand shell_command_reset     PROGMEM = {"reset",     reset_command};
-
-/*
- * Record command
- */
-const ShellCommand shell_command_record    PROGMEM = {"record",    record_command};
-
 const ShellCommand	*shell_command_table[] PROGMEM =
 {
     &shell_command_time,
     &shell_command_stack,
     &shell_command_status,
-
     &shell_command_led,
-
-    &shell_command_release,	//boot_module twi
-    &shell_command_master,	//boot_module twi
-    &shell_command_message,	//boot_module twi
-    &shell_command_twi,		//boot_module twi
-    &shell_command_avcc,	//boot_module cylinder
-
+    &shell_command_release,
+    &shell_command_master,
+    &shell_command_message,
+    &shell_command_twi,
+    &shell_command_sd_init,
     &shell_command_sd_csd,
-
-    &shell_command_ls,		//boot_module file_system
-    &shell_command_cd,		//boot_module file_system
-    &shell_command_cat,		//boot_module file_system
-    &shell_command_hexdump,	//boot_module file_system
-    &shell_command_dump,	//boot_module file_system
-    &shell_command_write,	//boot_module file_system
-    &shell_command_debug,	//boot_module file_system
-    &shell_command_partition,	//boot_module file_system
-
-    &shell_command_gain,	//boot_module adc
-    &shell_command_adc,		//boot_module adc
-    &shell_command_dac,		//boot_module dac
-    &shell_command_search,	//boot_module adc
-    &shell_command_sample,	//boot_module adc
-    &shell_command_average,	//boot_module adc
-    &shell_command_test,	//boot_module adc
-    &shell_command_up,		//boot_module adc
-    &shell_command_down,	//boot_module adc
-
+    &shell_command_fs_init,
+    &shell_command_ls,
+    &shell_command_cd,
+    &shell_command_cat,
+    &shell_command_hexdump,
+    &shell_command_dump,
+    &shell_command_write,
+    &shell_command_debug,
+    &shell_command_partition,
+    &shell_command_gain,
+    &shell_command_adc,
+    &shell_command_dac,
+    &shell_command_search,
+    &shell_command_sample,
+    &shell_command_average,
+    &shell_command_test,
+    &shell_command_up,
+    &shell_command_down,
     &shell_command_battery,
     &shell_command_temp,
     &shell_command_rtc,
     &shell_command_rtc_date,
     &shell_command_rtc_time,
     &shell_command_reset,
-
     &shell_command_record,
 };
 /*********************************************************************************************************************/

@@ -111,6 +111,6 @@ Error fs_dir_reset     (DirIndex dir);
 DirEntry *fs_dir_read  (DirIndex dir);
 DirEntry *fs_dir_lookup(DirIndex dir, const char *name);
 
-extern const BootModule boot_module_file_system PROGMEM;
+extern const BootModule 	boot_module_file_system PROGMEM;
 
 #endif //__file_system_h__

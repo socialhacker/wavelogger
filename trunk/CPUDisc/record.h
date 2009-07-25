@@ -21,4 +21,6 @@
 
 Error record_command(uint argc, const char **argv);
 
+extern const ShellCommand	shell_command_record    PROGMEM;
+
 #endif //__cpu_record_h__

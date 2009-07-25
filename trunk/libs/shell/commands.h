@@ -17,11 +17,10 @@
 #ifndef __shell_commands_h__
 #define __shell_commands_h__
 
-#include "libs/types/types.h"
-#include "libs/error/error.h"
+#include "libs/shell/shell.h"
 
-Error time_command(uint argc, const char **argv);
-Error stack_command(uint argc, const char **argv);
-Error status_command(uint argc, const char **argv);
+extern const ShellCommand	shell_command_time      PROGMEM;
+extern const ShellCommand	shell_command_stack     PROGMEM;
+extern const ShellCommand	shell_command_status    PROGMEM;
 
 #endif //__shell_commands_h__

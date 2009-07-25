@@ -20,6 +20,9 @@
 #include "libs/shell/shell.h"
 
 Error read_bw_command(uint argc, const char **argv);
-Error dump_command(uint argc, const char **argv);
+Error dump_command   (uint argc, const char **argv);
+
+extern const ShellCommand	shell_command_read_bw   PROGMEM;
+extern const ShellCommand	shell_command_dump      PROGMEM;
 
 #endif //__buffer_commands_h__
