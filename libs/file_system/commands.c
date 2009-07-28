@@ -120,18 +120,14 @@ static void show_hex_line(uint32 address, uint8 *data, uint length)
     for (j = 0; j < length; ++j)
     {
 	write(PSTR("%hx"), data[j]);
-
-	if (j & 1)
-	    putc(' ');
+	putc(' ');
     }
 
     for (; j < 16; ++j)
     {
 	putc(' ');
 	putc(' ');
-
-	if (j & 1)
-	    putc(' ');
+	putc(' ');
     }
 
     putc(' ');
@@ -159,9 +155,9 @@ static Error show_file(const char *filename, void (*show)(uint32 address, uint8 
 
     while (!done)
     {
-	uint8	data[16];
-	uint	read;
-	Error	error = fs_file_read(file, data, 16, &read);
+	uint8	data[16] = {0};
+	uint	read     = 0;
+	Error	error    = fs_file_read(file, data, 16, &read);
 
 	switch (error)
 	{
