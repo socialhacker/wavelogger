@@ -175,6 +175,8 @@ static Error check_file_position(FileIndex meta, uint32 *file_position, bool *qu
     Check(fs_file_write(meta, file_position, sizeof(*file_position), null));
     Check(fs_file_sync(meta));
 
+    WRITE("file position = 0x%lx\r\n", *file_position);
+
     return success;
 }
 /*********************************************************************************************************************/
