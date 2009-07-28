@@ -1,0 +1,25 @@
+#summary How to setup a micro SD card for the wavelogger
+#labels Phase-Deploy,Featured
+
+= Storage Capacity =
+
+Micro SD cards are a very cheap form of mass storage for a data logger.  The wavelogger records two 10-bit channels at a 100Hz sample rate.  It records a full 512 byte block of data to the micro SD card every two seconds.  A 2 gigabyte memory card can store about `(2^31) / (2^9)`, or `2^22`, or 4 mega blocks of data.  Some of these blocks will be used by the FAT file system, and some will be used by the configuration and metadata files that the wavelogger requires.  Say you only end up with 4 million blocks (`4 * 10^6`, instead of `2^22`).  Then you can store 8 million seconds of data.  That's over 90 days of data.
+
+= Files =
+
+There are three files that need to be placed on the SD card.  The first is a configuration file that specifies what other files the wavelogger should look for, and what values to use for channel gains.
+
+The second is a file called metadata.dat that tells the wavelogger how much it has recorded, and whether it should start recording right away, or wait for the operator to start recording by placing a magnet beside the device.
+
+The third is the actual data file.  It is called wavedata.dat and is initialized to all zeros.  This is required because the the wavelogger firmware cannot create or expand files.  So we have to make it one beforehand that it'll fill in.
+
+= Commands to Create the Files =
+
+`echo -n -e "\0377\0377\0377\0377" > metadata.dat`
+
+`echo -n -e "wavedata.dat\0000" > config.dat` <br>
+`echo -n -e "metadata.dat\0000" >> config.dat` <br>
+`echo -n -e "\0000\0144" >> config.dat` <br>
+`echo -n -e "\0363" >> config.dat`
+
+`dd if=/dev/zero of=wavedata.dat bs=512 count=4000000`
