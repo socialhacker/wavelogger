@@ -1,4 +1,5 @@
 #summary How to deploy a wavelogger in the field
+#labels Phase-Deploy,Featured
 
 = Introduction =
 
