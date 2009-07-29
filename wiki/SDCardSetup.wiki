@@ -13,7 +13,7 @@ The second is a file called metadata.dat that tells the wavelogger how much it h
 
 The third is the actual data file.  It is called wavedata.dat and is initialized to all zeros.  This is required because the the wavelogger firmware cannot create or expand files.  So we have to make it one beforehand that it'll fill in.
 
-= Commands to Create the Files =
+= Commands to Create the Files for Deployment =
 
 These commands should be executed from a terminal in the SDCards top level directory.  The number format `\0xxx` is a way of inserting raw bytes into the files.  The numbers are base 8, or octal.  So \0377 is the same as 255 which is the same as 0xff in hexadecimal.  \0144 is the same as 100, and \0363 is the same as 243.
 
@@ -26,7 +26,7 @@ These commands should be executed from a terminal in the SDCards top level direc
 
 `dd if=/dev/zero of=wavedata.dat bs=512 count=4000000`
 
-The third line that writes to the config.dat file above sets the number of samples per second to record.  Currently that value is ignored and the Wavelogger always records 100 samples per second.  The fourth line sets the gain to use while recording.  A value of \0363 (243 in decimal) sets the gain to about 50.
+The third line that writes to the config.dat file above sets the number of samples per second to record.  Currently that value is ignored and the Wavelogger always records 100 samples per second.  The fourth line sets the gain to use while recording.  A value of \0363 (243 in decimal) sets the gain to about 50.  The count value of four million above will fit in a two gigabyte SDCard, but won't fit in a one gigabyte card.  A value of two million will though.
 
 = Commands to Create the Files for Current Measurement =
 
