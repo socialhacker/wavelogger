@@ -1,0 +1,21 @@
+#summary How to measure the current draw and power down time of an SDCard
+#labels Phase-Deploy,Featured
+= Introduction =
+
+SDCards have a lot of variability in their performance characteristics.  The two parameters that are most important for use in the Wavelogger are the current consumption when not idle and the time it takes the card to return to an idle state after a write or read.  The wavelogger can be used to test these parameters with the addition of an oscilloscope and a resistor.
+
+The best SDCards that we have tested draw about 13mA (milliamps) and can power down in about 12ms (milliseconds).  Since the Wavelogger writes to the card once every two seconds the resulting average current draw is:
+
+`13mA * 12ms / 2s = 78uA`
+
+The worst SDCards that we have tested draw about 56mA and take about 300ms to power down.  Thus they average:
+
+`56mA * 300ms / 2s = 8.4mA`
+
+That is more than two orders of magnitude more current.  Since the rest of the Wavelogger only draws a few milliamps on average this is a very significant amount of current.
+
+= Details =
+
+Measuring the current draw of an SDCard can be accomplished by putting a small (4.7ohm) resistor in series with a 9 volt battery.  The voltage drop across the resistor can be used to compute the total current draw of the Wavelogger using:
+
+`current (Amps) = voltage drop (Volts) / 4.7 (Ohms)`
