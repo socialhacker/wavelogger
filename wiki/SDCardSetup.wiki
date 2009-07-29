@@ -23,3 +23,18 @@ The third is the actual data file.  It is called wavedata.dat and is initialized
 `echo -n -e "\0363" >> config.dat`
 
 `dd if=/dev/zero of=wavedata.dat bs=512 count=4000000`
+
+= Commands to Create the Files for Current Measurement =
+
+When measuring the current consumption of the Wavelogger there are a couple of things you can do differently.  Firstly, you probably don't want the Wavelogger to wait for you to activate it with a magnet.  To do this we write 0 instead of 0xffffffff to the metadata.dat file.  Also, you probably don't need to have such a large wavedata.dat file.  The commands to generate this version of the required files are:
+
+`echo -n -e "\0000\0000\0000\0000" > metadata.dat`
+
+`echo -n -e "wavedata.dat\0000" > config.dat` <br>
+`echo -n -e "metadata.dat\0000" >> config.dat` <br>
+`echo -n -e "\0000\0144" >> config.dat` <br>
+`echo -n -e "\0363" >> config.dat`
+
+`dd if=/dev/zero of=wavedata.dat bs=512 count=3600`
+
+The wavedata.dat file created can store 2 hours of data, plenty of time to test out SDCards.
