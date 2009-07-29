@@ -20,4 +20,10 @@ Measuring the current draw of an SDCard can be accomplished by putting a small (
 
 `current (Amps) = voltage drop (Volts) / 4.7 (Ohms)`
 
+The resistor can be any small value you like.  I found that 4.7 ohms was a good balance.  Anything smaller and the signal is getting too small and there is a lot of noise.  Anything much larger and the voltage drop across the resistor can become a problem for the Wavelogger.  With a 9 volt battery that is less of a problem than with a 3.7 volt lithium battery.
+
+The circuit I used to measure Wavelogger current consumption is shown below.  The O_TIP and O_GND points are the Oscilloscope tip and ground clamp connection points respectively.
+
 [http://wavelogger.googlecode.com/files/current_measurement.png]
+
+Once you have that all wired up you need to initialize an SDCard correctly so the wavelogger will write to it and you will be able to see the current usage patterns that result.  You can see how to do this on the SDCardSetup page.
