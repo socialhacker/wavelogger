@@ -19,3 +19,5 @@ That is more than two orders of magnitude more current.  Since the rest of the W
 Measuring the current draw of an SDCard can be accomplished by putting a small (4.7ohm) resistor in series with a 9 volt battery.  The voltage drop across the resistor can be used to compute the total current draw of the Wavelogger using:
 
 `current (Amps) = voltage drop (Volts) / 4.7 (Ohms)`
+
+[http://wavelogger.googlecode.com/files/current_measurement.png]
