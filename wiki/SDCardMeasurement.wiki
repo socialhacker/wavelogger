@@ -27,3 +27,16 @@ The circuit I used to measure Wavelogger current consumption is shown below.  Th
 [http://wavelogger.googlecode.com/files/current_measurement.png]
 
 Once you have that all wired up you need to initialize an SDCard correctly so the wavelogger will write to it and you will be able to see the current usage patterns that result.  You can see how to do this on the [SDCardSetup] page.
+
+Measurement of the current draw while the card is active can be done on a Tektronix TDS 1012 or equivalent oscilloscope.  For the Tektronix set the options as follows.
+
+ * Trigger:
+  * Type: Edge
+  * Source: CH1
+  * Slope: Rising
+  * Mode: Normal
+  * Coupling: DC
+  * Level: 100mV
+ * Channel 1:
+  * Volts/Division: 50mV
+  * Seconds/Division: 25ms
