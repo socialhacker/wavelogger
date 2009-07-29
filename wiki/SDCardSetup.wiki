@@ -24,9 +24,9 @@ These commands should be executed from a terminal in the SDCards top level direc
 `echo -n -e "\0000\0144" >> config.dat` <br>
 `echo -n -e "\0363" >> config.dat`
 
-`dd if=/dev/zero of=wavedata.dat bs=512 count=4000000`
+`dd if=/dev/zero of=wavedata.dat bs=512 count=3800000`
 
-The third line that writes to the config.dat file above sets the number of samples per second to record.  Currently that value is ignored and the Wavelogger always records 100 samples per second.  The fourth line sets the gain to use while recording.  A value of \0363 (243 in decimal) sets the gain to about 50.  The count value of four million above will fit in a two gigabyte SDCard, but won't fit in a one gigabyte card.  A value of two million will though.  The `dd` command will take a minute or two.
+The third line that writes to the config.dat file above sets the number of samples per second to record.  Currently that value is ignored and the Wavelogger always records 100 samples per second.  The fourth line sets the gain to use while recording.  A value of \0363 (243 in decimal) sets the gain to about 50.  The count value of 3800000 above will fit in a two gigabyte SDCard, but won't fit in a one gigabyte card.  A value of 1900000 will though.  The `dd` command will take a minute or two, depending on the speed of your SDCard reader and SDCard.
 
 = Commands to Create the Files for Current Measurement =
 
