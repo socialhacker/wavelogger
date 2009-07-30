@@ -47,5 +47,24 @@ Power Supply, Real Time Clock, Temperature Measurement and Battery Monitoring Bo
 </img>
 </a>
 
-
 = Housing =
+
+We made water tight housings for the waveloggers out of clear PVC tube with machined end caps.  There is a single O-ring that seals the housing when the end cap with the sensor is screwed into the housing.  The O-ring is coated in 100% silicone grease.
+
+= Assembly =
+
+The wavelogger boards are mounted on the threaded rod hardware starting with the Analog Board.  Each board is seperated by two 7/16th inch spacers.  The remaining boards are assembled in the order, Analog to Digital, CPU, and finally Power Supply.
+
+The Micro SD Card should be setup and installed in the CPU boards slot before the batteries are connected.  Micro SD Card setup instructions can be found on the [SDCardSetup] page.
+
+The Battery holder is separated from the stack of boards by two 7/16th inch spaces, one on each threaded rod.  And finally two 4-40 nuts hold the entire assembly together.
+
+= Activation =
+
+Once the wavelogger is completely assembled it will be waiting for an activation signal before it runs its auto zero routine.  To start the logger you place a magnet on the outside of the housing near the CPU board.  This will activate the magnetic reed switch on the CPU board and will start the auto zero routine.  Once the auto zero routine is complete (The LEDs will flash four times, with a few seconds pause between each flash) the wavelogger will go into the record mode.  At this time no LEDs should be flashing.  If they are you can diagnose the problem by following the instructions on the WaveloggerTroubleshooting page.
+
+= Downloading =
+
+Once the wavelogger has gathered the data required it is easy to download it from the Micro SD Card.  First the housing is unscrewed.  Then the batteries are disconnected.  And finally the Micro SD Card is removed and placed in a card reader.  The three files can be copied to a directory on your computer, and the card reformatted for additional recording.
+
+= Processing =
