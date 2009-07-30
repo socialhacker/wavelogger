@@ -7,7 +7,7 @@ The wavelogger is intended to be deployed into the rocky intertidal to measure w
 
 = Batteries = 
 
-The wavelogger is designed to run with two AA sized 3.7v Lithium batteries.  Tadiran TL-5104's are what we use.
+The wavelogger is designed to run with two AA sized 3.7v Lithium batteries.  Tadiran TL-5104's are what we use.  The batteries are wired in parallel, so both of the positive terminals should be at the same end of the battery pack.  They should both point towards the rest of the wavelogger hardware, to the end with the red wire.
 
 <img src="http://wavelogger.googlecode.com/files/Batteries.jpg" width="512" height="384">
 
@@ -16,3 +16,29 @@ The wavelogger is designed to run with two AA sized 3.7v Lithium batteries.  Tad
 The SDCard can have a large impact on the battery life of the wevelogger.  Check out [SDCardMeasurement] for a discussion of the relevant factors.  We have found that the current SanDisk 2GB cards are excellent.
 
 The [SDCardSetup] page describes how to correctly configure an SDCard for use in the wavelogger.
+
+Since the SDCard has such a large influence we did a thorough testing of a number of cards to find the best performers.  The results of that testing can be found at [SDCardComparison].  We ended up marking the best cards with whiteout to identify them later.
+
+= Boards =
+
+There are four boards that make up the wavelogger when it is deployed.  There is a fifth board that allows it to talk to a desktop or laptop using a USB connection.  The boards are the analog amplifier board, the analog to digital and digital to analog converter board, the CPU/Micro SD Card board and the power supply/real time clock board.
+
+<a href="http://wavelogger.googlecode.com/files/AnalogDisc.jpg">
+<img src="http://wavelogger.googlecode.com/files/AnalogDisc.jpg" width="256" height="192">
+</img>
+</a>
+<a href="http://wavelogger.googlecode.com/files/ADDisc.jpg">
+<img src="http://wavelogger.googlecode.com/files/ADDisc.jpg" width="256" height="192">
+</img>
+</a>
+<a href="http://wavelogger.googlecode.com/files/CPUDisc.jpg">
+<img src="http://wavelogger.googlecode.com/files/CPUDisc.jpg" width="256" height="192">
+</img>
+</a>
+<a href="http://wavelogger.googlecode.com/files/PowerDisc.jpg">
+<img src="http://wavelogger.googlecode.com/files/PowerDisc.jpg" width="256" height="192">
+</img>
+</a>
+
+
+= Housing =
