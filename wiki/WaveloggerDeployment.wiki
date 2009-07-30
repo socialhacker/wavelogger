@@ -21,20 +21,27 @@ Since the SDCard has such a large influence we did a thorough testing of a numbe
 
 = Boards =
 
-There are four boards that make up the wavelogger when it is deployed.  There is a fifth board that allows it to talk to a desktop or laptop using a USB connection.  The boards are the analog amplifier board, the analog to digital and digital to analog converter board, the CPU/Micro SD Card board and the power supply/real time clock board.
+There are four boards that make up the wavelogger when it is deployed.  There is a fifth board that allows it to talk to a desktop or laptop using a USB connection.
 
+Analog Amplifier Board plus sensor, end cap and threaded mounting rods.
 <a href="http://wavelogger.googlecode.com/files/AnalogDisc.jpg">
 <img src="http://wavelogger.googlecode.com/files/AnalogDisc.jpg" width="256" height="192">
 </img>
 </a>
+
+Analog to Digital and Digital to Analog conversion Board.
 <a href="http://wavelogger.googlecode.com/files/ADDisc.jpg">
 <img src="http://wavelogger.googlecode.com/files/ADDisc.jpg" width="256" height="192">
 </img>
 </a>
+
+CPU and Micro SD Card Board.
 <a href="http://wavelogger.googlecode.com/files/CPUDisc.jpg">
 <img src="http://wavelogger.googlecode.com/files/CPUDisc.jpg" width="256" height="192">
 </img>
 </a>
+
+Power Supply, Real Time Clock, Temperature Measurement and Battery Monitoring Board.
 <a href="http://wavelogger.googlecode.com/files/PowerDisc.jpg">
 <img src="http://wavelogger.googlecode.com/files/PowerDisc.jpg" width="256" height="192">
 </img>
