@@ -9,7 +9,7 @@ The wavelogger is intended to be deployed into the rocky intertidal to measure w
 
 The wavelogger is designed to run with two AA sized 3.7v Lithium batteries.  Tadiran TL-5104's are what we use.
 
-[http://wavelogger.googlecode.com/files/Batteries.jpg]
+<img src="http://wavelogger.googlecode.com/files/Batteries.jpg" width="512" height="384">
 
 = SDCards =
 
