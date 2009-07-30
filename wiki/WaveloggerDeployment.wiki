@@ -68,3 +68,9 @@ Once the wavelogger is completely assembled it will be waiting for an activation
 Once the wavelogger has gathered the data required it is easy to download it from the Micro SD Card.  First the housing is unscrewed.  Then the batteries are disconnected.  And finally the Micro SD Card is removed and placed in a card reader.  The three files can be copied to a directory on your computer, and the card reformatted for additional recording.
 
 = Processing =
+
+The first stages of processing the data can be done with the `process` tool found in the `wavelogger/tools/process/release` directory.  This program converts the binary file format written by the wavelogger into CSV files.  The simplest command line from the `wavelogger/tools` directory to process a file is:
+
+`./release/process -file wavedata.dat -output output.csv -start 0 -stop 4000000000`
+
+That command line will read an input file called wavedata.dat and write to a file called output.csv.  It will dump any data with a timestamp starting at 0 and ending at 4 billion.  That will encompass all possible time stamps.  You can have the program only spit out segments of the file by changing the timestamps passed to `start` and `stop`.  The timestamp is the number of 100ths of seconds that have passed since January 1st 2000.
