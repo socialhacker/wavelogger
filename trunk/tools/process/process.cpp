@@ -20,6 +20,8 @@
 #include "libs/files/path.h"
 #include "libs/command_line/command_line.h"
 
+#include <math.h>
+
 using namespace Err;
 using namespace Files;
 
@@ -29,34 +31,80 @@ namespace CommandLine
     static Scalar<Path>		file   ("file",    false, Path("."),
 					"Wavedata file to process.");
 
-    static Scalar<Path>		output ("output",  true,  Path("output.csv"),
+    static Scalar<Path>		output ("output",  true,  Path("."),
 					"Filename for processed CSV data.");
 
-    static Scalar<uint64>	start  ("start",   true,  0,
+    static Scalar<uint64>	start  ("start",   true,  0x0000000000000000,
 					"Timestamp to start dumping from.");
 
-    static Scalar<uint64>	stop   ("stop",    true,  0,
+    static Scalar<uint64>	stop   ("stop",    true,  0x7fffffffffffffffll,
 					"Timestamp to stop dumping at.");
 
-    static Scalar<uint64>	samples("samples", true,  0,
-					"Number of samples to dump.");
+    static Scalar<bool>		average("average", true,  false,
+					"Output average of each block of 200 samples.  Also output "
+					"battery and temperature statistics.");
+
+    static Scalar<float>	one_pos("one-pos", true,  1.0f,
+					"First axis positive calibration factor in antons/Newton.");
+
+    static Scalar<float>	one_neg("one-neg", true,  1.0f,
+					"First axis negative calibration factor in antons/Newton.");
+
+    static Scalar<float>	two_pos("two-pos", true,  1.0f,
+					"Second axis positive calibration factor in antons/Newton.");
+
+    static Scalar<float>	two_neg("two-neg", true,  1.0f,
+					"Second axis negative calibration factor in antons/Newton.");
 
     static Argument	*arguments[] = { &file,
 					 &output,
 					 &start,
 					 &stop,
-					 &samples,
+					 &average,
+					 &one_pos,
+					 &one_neg,
+					 &two_pos,
+					 &two_neg,
 					 null };
 }
 /**********************************************************************************************************************/
-int	count   = 0;
-int	total   = 0;
-bool	process = false;
-FILE	*output = null;
-uint64	start   = 0;
-uint64	stop    = 0;
-uint64	samples = 0;
+bool	average      = false;
+bool	newtons      = false;
+bool	output       = false;
 
+uint64	start        = 0;
+uint64	stop         = 0;
+
+float	one_pos      = 1.0f;
+float	one_neg      = 1.0f;
+float	two_pos      = 1.0f;
+float	two_neg      = 1.0f;
+
+FILE	*output_file = null;
+
+int	count        = 0;
+int	total        = 0;
+
+/**********************************************************************************************************************/
+float get_newtons(Block *block, int index, int channel)
+{
+    int		sample   = block->sample(index, channel) & 0xfff;
+    float	sample_N = sample - 512;
+
+    if (channel == 0)
+    {
+	if (sample_N > 0.0f)	sample_N /= one_pos;
+	else			sample_N /= one_neg;
+    }
+    else
+    {
+	if (sample_N > 0.0f)	sample_N /= two_pos;
+	else			sample_N /= two_neg;
+    }
+
+    return sample_N;
+}
+/**********************************************************************************************************************/
 void process_block(Block *block)
 {
     uint64	ticks = block->ticks();
@@ -66,46 +114,102 @@ void process_block(Block *block)
 	case Block::data:
 	    ++count;
 
-	    if (process && (ticks + 200) >= start && ticks < stop)
+	    if (output && (ticks + 200) >= start && ticks < stop)
 	    {
-		if (samples > 0)
+		if (average)
 		{
-		    int	min[4];
-		    int	max[4];
-
-		    for (int i = 0; i < 4; ++i)
+		    if (newtons)
 		    {
-			min[i] = block->sample(0, i) & 0xfff;
-			max[i] = min[i];
-		    }
+			float	sample[3];
+			float	average[3];
+			float	min[3];
+			float	max[3];
 
-		    for (uint j = 1; j < 200; ++j)
-		    {
-			for (int i = 0; i < 4; ++i)
+			sample[0] = get_newtons(block, 0, 0);
+			sample[1] = get_newtons(block, 0, 1);
+			sample[2] = ::sqrt(sample[0] * sample[0] + sample[1] * sample[1]);
+
+			for (uint i = 0; i < 3; ++i)
 			{
-			    int	sample = block->sample(j, i) & 0xfff;
-
-			    if (min[i] > sample) min[i] = sample;
-			    if (max[i] < sample) max[i] = sample;
+			    min[i]     = sample[i];
+			    max[i]     = sample[i];
+			    average[i] = sample[i];
 			}
-		    }
 
-		    fprintf(output, "%lld, %d, %d, %d, %d, %d, %d, %d, %d\n",
-			    ticks,
-			    min[0], max[0],
-			    min[1], max[1],
-			    min[2], max[2],
-			    min[3], max[3]);
+			for (uint j = 1; j < 200; ++j)
+			{
+			    sample[0] = get_newtons(block, j, 0);
+			    sample[1] = get_newtons(block, j, 1);
+			    sample[2] = ::sqrt(sample[0] * sample[0] + sample[1] * sample[1]);
+
+			    for (uint i = 0; i < 3; ++i)
+			    {
+				if (min[i] > sample[i]) min[i] = sample[i];
+				if (max[i] < sample[i]) max[i] = sample[i];
+
+				average[i] += sample[i];
+			    }
+			}
+
+			for (uint i = 0; i < 3; ++i)
+			    average[i] /= 200.0f;
+
+			fprintf(output_file, "%lld, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
+				ticks,
+				average[0], min[0], max[0],
+				average[1], min[1], max[1],
+				average[2], min[2], max[2]);
+		    }
+		    else
+		    {
+			float	average[2];
+			int	min[2];
+			int	max[2];
+
+			for (int i = 0; i < 2; ++i)
+			{
+			    min[i]     = block->sample(0, i) & 0xfff;
+			    max[i]     = min[i];
+			    average[i] = min[i];
+
+			    for (uint j = 1; j < 200; ++j)
+			    {
+				int	sample = block->sample(j, i) & 0xfff;
+
+				if (min[i] > sample) min[i] = sample;
+				if (max[i] < sample) max[i] = sample;
+
+				average[i] += sample;
+			    }
+
+			    average[i] /= 200.0f;
+			}
+
+			fprintf(output_file, "%lld, %f, %d, %d, %f, %d, %d\n",
+				ticks,
+				average[0], min[0], max[0],
+				average[1], min[1], max[1]);
+		    }
 		}
 		else
 		{
 		    for (uint i = 0; i < 200; ++i)
-			fprintf(output, "%lld, %d, %d, %d, %d\n",
-				ticks + i,
-				block->sample(i, 0) & 0xfff,
-				block->sample(i, 1) & 0xfff,
-				block->sample(i, 2) & 0xfff,
-				block->sample(i, 3) & 0xfff);
+		    {
+			if (newtons)
+			{
+			    float	one_N = get_newtons(block, i, 0);
+			    float	two_N = get_newtons(block, i, 1);
+
+			    fprintf(output_file, "%lld, %f, %f\n", ticks + i, one_N, two_N);
+			}
+			else
+			{
+			    int		one   = block->sample(i, 0) & 0xfff;
+			    int		two   = block->sample(i, 1) & 0xfff;
+
+			    fprintf(output_file, "%lld, %d, %d\n", ticks + i, one, two);
+			}
+		    }
 		}
 
 		++total;
@@ -122,33 +226,47 @@ int main(int argc, const char **argv)
     Error	check_error = success;
     Wavefile	wavefile;
 
-    CheckCleanup(CommandLine::parse(argc, argv, CommandLine::arguments), failure);
+    CheckCleanup(CommandLine::parse(argc, argv, CommandLine::arguments), parse_failure);
 
-    if (CommandLine::start.set() ^ CommandLine::stop.set())
+    average = CommandLine::average.get();
+    newtons = (CommandLine::one_pos.set() |
+	       CommandLine::one_neg.set() |
+	       CommandLine::two_pos.set() |
+	       CommandLine::two_neg.set());
+    output  = CommandLine::output.set();
+
+    start   = CommandLine::start.get();
+    stop    = CommandLine::stop.get();
+
+    one_pos = CommandLine::one_pos.get();
+    one_neg = CommandLine::one_neg.get();
+    two_pos = CommandLine::two_pos.get();
+    two_neg = CommandLine::two_neg.get();
+
+    /*********************************************************************************************/
+    if (output)
     {
-	printf("Start and Stop must both be specified if either is.\n");
-	CommandLine::usage(argv[0], CommandLine::arguments);
-	exit(-1);
-    }
+	output_file = fopen(CommandLine::output.get().get().str(), "w");
 
-    if (!(CommandLine::start.set() || CommandLine::stop.set()) && CommandLine::samples.set())
-    {
-	printf("Start and Stop must be set if Samples is used.\n");
-	CommandLine::usage(argv[0], CommandLine::arguments);
-	exit(-1);
-    }
-
-    process = (CommandLine::start.set() || CommandLine::stop.set());
-
-    if (process)
-    {
-	start   = CommandLine::start.get();
-	stop    = CommandLine::stop.get();
-	samples = CommandLine::samples.get();
-	output  = fopen(CommandLine::output.get().get().str(), "w");
-
-	CheckCleanupStringB(output, failure, "Failed to open file (%s) for writing.",
+	CheckCleanupStringB(output_file, failure, "Failed to open file (%s) for writing.",
 			    CommandLine::output.get().get().str());
+
+	{
+	    const char	*units;
+
+	    if (newtons) units = "Newtons";
+	    else         units = "Antons";
+
+	    if (average)
+		fprintf(output_file, "timestamp, CH1 Avg (%s), CH1 Min (%s), CH1 Max (%s), CH2 Avg (%s), CH2 Min (%s), CH2 Max (%s)",
+			units, units, units, units, units, units);
+	    else
+		fprintf(output_file, "timestamp, CH1 (%s), CH2 (%s)\n",
+			units, units);
+
+	    if (newtons)
+		fprintf(output_file, ", Mag Avg (Newtons), Mag Min (Newtons), Mag Max (Newtons)\n");
+	}
     }
 
     CheckCleanup(wavefile.read(CommandLine::file.get(), process_block), failure);
@@ -157,15 +275,18 @@ int main(int argc, const char **argv)
 
     printf("There were %d data blocks in the file, %d of them mattered.\n", count, total);
 
-    if (process)
-    {
-	fclose(output);
-    }
+    if (output_file)
+	fclose(output_file);
+
+    /*********************************************************************************************/
 
     return 0;
 
   failure:
     error_stack_print();
+
+  parse_failure:
+    error_stack_clear();
     return -1;
 }
 /**********************************************************************************************************************/
