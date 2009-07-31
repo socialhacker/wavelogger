@@ -225,7 +225,7 @@ Error Wavefile::read_sequence(Segment *segment)
 
     while (_block->type() == Block::data)
     {
-	if (ticks != uint64(-1) && abs(_block->ticks() - _old_block->ticks() - 200) > 2)
+	if (ticks != uint64(-1) && abs(_block->ticks() - _old_block->ticks() - 200) > 20)
 	    break;
 
 	Check(match(Block::data));
