@@ -28,6 +28,7 @@
 #include "libs/data/array.h"
 #include "libs/files/path.h"
 
+/**********************************************************************************************************************/
 class Block
 {
     typedef Err::Error	Error;
@@ -96,7 +97,7 @@ public:
     uint64 ticks();
     uint16 sample(int tick, int channel);
 };
-
+/**********************************************************************************************************************/
 class Sequence
 {
     typedef Err::Error	Error;
@@ -113,7 +114,7 @@ public:
 
     void debug_print(int indent);
 };
-
+/**********************************************************************************************************************/
 class Segment
 {
     typedef Err::Error	Error;
@@ -129,7 +130,7 @@ public:
 
     void debug_print(int indent);
 };
-
+/**********************************************************************************************************************/
 class Wavefile
 {
     typedef Err::Error	Error;
@@ -147,9 +148,11 @@ class Wavefile
 
 public:
     Wavefile();
+    virtual ~Wavefile();
 
     Error read(Files::Path path, ProcessBlockCallback callback);
     void debug_print(int indent);
 };
+/**********************************************************************************************************************/
 
 #endif //__process_wavefile_h__

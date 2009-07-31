@@ -188,7 +188,7 @@ Error CommandLine::parse(int argc, const char **argv, Argument **arguments)
 	{
 	    printf("Unknown argument \"%s\".\n\n", argv[i]);
 	    usage(argv[0], arguments);
-	    exit(-1);
+	    Check(failure);
 	}
     }
 
@@ -201,7 +201,7 @@ Error CommandLine::parse(int argc, const char **argv, Argument **arguments)
 	{
 	    printf("Argument %s is required and was not set.\n\n", arguments[i]->name().str());
 	    usage(argv[0], arguments);
-	    exit(-1);
+	    Check(failure);
 	}
     }
 

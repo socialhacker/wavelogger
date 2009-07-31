@@ -1,0 +1,62 @@
+Just show parsed segments.
+    ./release/process -file    wavedata.dat
+
+Output file in Antons.
+    ./release/process -file    wavedata.dat
+                      -output  output.csv
+
+Output file in Antons averaged over 200 samples.
+    ./release/process -file    wavedata.dat
+                      -output  output.csv
+		      -average
+
+Output 200 sample section of file in Antons.
+    ./release/process -file    wavedata.dat
+                      -output  output.csv
+                      -start   12345000
+                      -stop    12345200
+
+Output 200 sample section of file in Antons averaged over 200 samples.
+    ./release/process -file    wavedata.dat
+                      -output  output.csv
+                      -start   12345000
+                      -stop    12345200
+                      -average
+
+Output file in Newtons.
+    ./release/process -file    wavedata.dat
+                      -output  output.csv
+                      -one-pos 9.23
+                      -one-neg 7.123
+                      -one-pos 8.22
+                      -one-neg 8.934
+
+Output file in Newtons averaged over 200 samples.
+    ./release/process -file    wavedata.dat
+                      -output  output.csv
+		      -average
+                      -one-pos 9.23
+                      -one-neg 7.123
+                      -one-pos 8.22
+                      -one-neg 8.934
+
+Output 200 sample section of file in Newtons.
+    ./release/process -file    wavedata.dat
+                      -output  output.csv
+                      -start   12345000
+                      -stop    12345200
+                      -one-pos 9.23
+                      -one-neg 7.123
+                      -one-pos 8.22
+                      -one-neg 8.934
+
+Output 200 sample section of file in Newtons averaged over 200 samples.
+    ./release/process -file    wavedata.dat
+                      -output  output.csv
+                      -start   12345000
+                      -stop    12345200
+                      -average
+                      -one-pos 9.23
+                      -one-neg 7.123
+                      -one-pos 8.22
+                      -one-neg 8.934

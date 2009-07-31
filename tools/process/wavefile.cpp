@@ -184,6 +184,12 @@ Wavefile::Wavefile() :
 {
 }
 /**********************************************************************************************************************/
+Wavefile::~Wavefile()
+{
+    delete _block;
+    delete _old_block;
+}
+/**********************************************************************************************************************/
 Error Wavefile::read(Path path, ProcessBlockCallback callback)
 {
     const char	*filename = path.get().str();
