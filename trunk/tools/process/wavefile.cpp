@@ -16,6 +16,8 @@
  */
 #include "process/wavefile.h"
 
+#include <time.h>
+
 using namespace Err;
 using namespace Data;
 using namespace Files;
@@ -145,11 +147,28 @@ void Sequence::debug_print(int indent)
 {
     int64	delta = _stop - _start;
     float	hours = float(delta) / float(100 * 60 * 60);
+    time_t	start = _start / 100;
+    time_t	stop  = _stop  / 100;
+    struct tm	delta_tm;
+    time_t	delta_time;
 
-    printf("%*sSequence\n",                indent, "");
-    printf("%*s    start....: 0x%08llx\n", indent, "", _start);
-    printf("%*s    stop.....: 0x%08llx\n", indent, "", _stop);
-    printf("%*s    hours....: %0.2f\n",    indent, "", hours);
+    delta_tm.tm_sec  = 0;
+    delta_tm.tm_min  = 0;
+    delta_tm.tm_hour = 0;
+    delta_tm.tm_mday = 1;
+    delta_tm.tm_mon  = 0;
+    delta_tm.tm_year = 100;
+    delta_tm.tm_yday = 0;
+
+    delta_time = mktime(&delta_tm);
+
+    start += delta_time;
+    stop  += delta_time;
+
+    printf("%*sSequence\n",               indent, "");
+    printf("%*s    start....: %lld : %s", indent, "", _start, ctime(&start));
+    printf("%*s    stop.....: %lld : %s", indent, "", _stop,  ctime(&stop));
+    printf("%*s    hours....: %0.2f\n",   indent, "", hours);
 }
 /**********************************************************************************************************************/
 Segment::Segment(Block *header) :
