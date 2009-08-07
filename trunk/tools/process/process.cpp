@@ -28,33 +28,39 @@ using namespace Files;
 /**********************************************************************************************************************/
 namespace CommandLine
 {
-    static Scalar<Path>		file   ("file",    false, Path("."),
-					"Wavedata file to process.");
+    static Scalar<Path>		file    ("file",     false, Path("."),
+					 "Wavedata file to process.");
 
-    static Scalar<Path>		output ("output",  true,  Path("."),
-					"Filename for processed CSV data.");
+    static Scalar<Path>		output  ("output",   true,  Path("."),
+					 "Filename for processed CSV data.");
 
-    static Scalar<uint64>	start  ("start",   true,  0x0000000000000000,
-					"Timestamp to start dumping from.");
+    static Scalar<uint64>	start   ("start",    true,  0x0000000000000000,
+					 "Timestamp to start dumping from.");
 
-    static Scalar<uint64>	stop   ("stop",    true,  0x7fffffffffffffffll,
-					"Timestamp to stop dumping at.");
+    static Scalar<uint64>	stop    ("stop",     true,  0x7fffffffffffffffll,
+					 "Timestamp to stop dumping at.");
 
-    static Scalar<bool>		average("average", true,  false,
-					"Output average of each block of 200 samples.  Also output "
-					"battery and temperature statistics.");
+    static Scalar<bool>		average ("average",  true,  false,
+					 "Output average of each block of 200 samples.  Also output "
+					 "battery and temperature statistics.");
 
-    static Scalar<float>	one_pos("one-pos", true,  1.0f,
-					"First axis positive calibration factor in antons/Newton.");
+    static Scalar<float>	one_pos ("one-pos",  true,  1.0f,
+					 "First axis positive calibration factor in Antons/Newton.");
 
-    static Scalar<float>	one_neg("one-neg", true,  1.0f,
-					"First axis negative calibration factor in antons/Newton.");
+    static Scalar<float>	one_neg ("one-neg",  true,  1.0f,
+					 "First axis negative calibration factor in Antons/Newton.");
 
-    static Scalar<float>	two_pos("two-pos", true,  1.0f,
-					"Second axis positive calibration factor in antons/Newton.");
+    static Scalar<int>		one_zero("one-zero", true,  512,
+					 "First axis zero in Antons.");
 
-    static Scalar<float>	two_neg("two-neg", true,  1.0f,
-					"Second axis negative calibration factor in antons/Newton.");
+    static Scalar<float>	two_pos ("two-pos",  true,  1.0f,
+					 "Second axis positive calibration factor in Antons/Newton.");
+
+    static Scalar<float>	two_neg ("two-neg",  true,  1.0f,
+					 "Second axis negative calibration factor in Antons/Newton.");
+
+    static Scalar<int>		two_zero("two-zero", true,  512,
+					 "Second axis zero in Antons.");
 
     static Argument	*arguments[] = { &file,
 					 &output,
@@ -63,8 +69,10 @@ namespace CommandLine
 					 &average,
 					 &one_pos,
 					 &one_neg,
+					 &one_zero,
 					 &two_pos,
 					 &two_neg,
+					 &two_zero,
 					 null };
 }
 /**********************************************************************************************************************/
@@ -80,6 +88,9 @@ float	one_neg      = 1.0f;
 float	two_pos      = 1.0f;
 float	two_neg      = 1.0f;
 
+int	one_zero     = 512;
+int	two_zero     = 512;
+
 FILE	*output_file = null;
 
 int	count        = 0;
@@ -89,15 +100,19 @@ int	total        = 0;
 float get_newtons(Block *block, int index, int channel)
 {
     int		sample   = block->sample(index, channel) & 0xfff;
-    float	sample_N = sample - 512;
+    float	sample_N = 0;
 
     if (channel == 0)
     {
+	sample_N = sample - one_zero;
+
 	if (sample_N > 0.0f)	sample_N /= one_pos;
 	else			sample_N /= one_neg;
     }
     else
     {
+	sample_N = sample - two_zero;
+
 	if (sample_N > 0.0f)	sample_N /= two_pos;
 	else			sample_N /= two_neg;
     }
@@ -228,20 +243,22 @@ int main(int argc, const char **argv)
 
     CheckCleanup(CommandLine::parse(argc, argv, CommandLine::arguments), parse_failure);
 
-    average = CommandLine::average.get();
-    newtons = (CommandLine::one_pos.set() |
-	       CommandLine::one_neg.set() |
-	       CommandLine::two_pos.set() |
-	       CommandLine::two_neg.set());
-    output  = CommandLine::output.set();
+    average  = CommandLine::average.get();
+    newtons  = (CommandLine::one_pos.set() |
+		CommandLine::one_neg.set() |
+		CommandLine::two_pos.set() |
+		CommandLine::two_neg.set());
+    output   = CommandLine::output.set();
 
-    start   = CommandLine::start.get();
-    stop    = CommandLine::stop.get();
+    start    = CommandLine::start.get();
+    stop     = CommandLine::stop.get();
 
-    one_pos = CommandLine::one_pos.get();
-    one_neg = CommandLine::one_neg.get();
-    two_pos = CommandLine::two_pos.get();
-    two_neg = CommandLine::two_neg.get();
+    one_pos  = CommandLine::one_pos.get();
+    one_neg  = CommandLine::one_neg.get();
+    one_zero = CommandLine::one_zero.get();
+    two_pos  = CommandLine::two_pos.get();
+    two_neg  = CommandLine::two_neg.get();
+    two_zero = CommandLine::two_zero.get();
 
     /*********************************************************************************************/
     if (output)
