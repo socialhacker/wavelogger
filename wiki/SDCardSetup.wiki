@@ -15,7 +15,7 @@ The third is the actual data file.  It is called wavedata.dat and is initialized
 
 = Commands to Create the Files for Deployment =
 
-These commands should be executed from a terminal in the SDCards top level directory.  The number format `\0xxx` is a way of inserting raw bytes into the files.  The numbers are base 8, or octal.  So \0377 is the same as 255 which is the same as 0xff in hexadecimal.  \0144 is the same as 100, and \0363 is the same as 243.
+These commands should be executed from a terminal in the SDCards top level directory.  This directory is probably something like "/Volumnes/NO NAME" on Mac OS X and "/media/disk" on Linux.  The number format `\0xxx` is a way of inserting raw bytes into the files.  The numbers are base 8, or octal.  So \0377 is the same as 255 which is the same as 0xff in hexadecimal.  \0144 is the same as 100, and \0363 is the same as 243.
 
 `echo -n -e "\0377\0377\0377\0377" > metadata.dat`
 
