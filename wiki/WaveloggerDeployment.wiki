@@ -7,7 +7,7 @@ The wavelogger is intended to be deployed into the rocky intertidal to measure w
 
 = Batteries = 
 
-The wavelogger is designed to run with two AA sized 3.7v Lithium batteries.  Tadiran TL-5104's are what we use.  The batteries are wired in parallel, so both of the positive terminals should be at the same end of the battery pack.  They should both point towards the rest of the wavelogger hardware, to the end with the red wire.
+The wavelogger is designed to run with two AA sized 3.7v Lithium batteries.  Tadiran TL-5104's are what we use.  The batteries are wired in parallel, so both of the positive terminals should be at the same end of the battery pack.  They should both point towards the rest of the wavelogger hardware, to the end with the red wire.  The hardware I made used battery terminals that have one spring and one flat connection on each end of the battery pack.  Do not be confused by this.  The positive ends of both batteries must be at the same end of the battery pack.
 
 <img src="http://wavelogger.googlecode.com/files/Batteries.jpg" width="512" height="384">
 
