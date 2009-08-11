@@ -19,6 +19,8 @@ The [SDCardSetup] page describes how to correctly configure an SDCard for use in
 
 Since the SDCard has such a large influence we did a thorough testing of a number of cards to find the best performers.  The results of that testing can be found at [SDCardComparison].  We ended up marking the best cards with whiteout to identify them later.
 
+Insertion and removal of the SDCard from the Wavelogger is done by pushing the card into the slot until it clicks.  It's easies to do this with a thumbnail.  Pushing the card in again will cause it to pop out a bit and it can then be easily removed.
+
 = Boards =
 
 There are four boards that make up the wavelogger when it is deployed.  There is a fifth board that allows it to talk to a desktop or laptop using a USB connection.
@@ -71,6 +73,8 @@ Once the wavelogger has gathered the data required it is easy to download it fro
 
 The first stages of processing the data can be done with the `process` tool found in the `wavelogger/tools/process/release` directory.  This program converts the binary file format written by the wavelogger into CSV files.  The simplest command line from the `wavelogger/tools/process` directory to process a file is:
 
-`./release/process -file wavedata.dat -output output.csv -start 0 -stop 4000000000`
+`./release/process -file wavedata.dat -output output.csv`
 
-That command line will read an input file called wavedata.dat and write to a file called output.csv.  It will dump any data with a timestamp starting at 0 and ending at 4 billion.  That will encompass all possible time stamps.  You can have the program only spit out segments of the file by changing the timestamps passed to `start` and `stop`.  The timestamp is the number of 100ths of seconds that have passed since January 1st 2000.
+That command line will read an input file called wavedata.dat and write to a file called output.csv.  It will dump the entire file.  You can have the program only spit out segments of the file by passing timestamps in the `start` and `stop` command line arguments.  The timestamp is the number of 100ths of seconds that have passed since January 1st 2000.
+
+The `./release/process` `wavedata.dat` and `output.csv` in the above command line are all paths.  They are all relative to the current directory, that is the directory that you are currently in (when you type ls you see the contents of the current directory).  You can run the process program from any directory.  You will need to change these three paths to point to the process program, the wavedata you want to read and the output file you want to generate respectively.
