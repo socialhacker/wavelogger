@@ -61,7 +61,7 @@ The Battery holder is separated from the stack of boards by two 7/16th inch spac
 
 = Activation =
 
-Once the wavelogger is completely assembled it will be waiting for an activation signal before it runs its auto zero routine.  To start the logger you place a magnet on the outside of the housing near the CPU board.  This will activate the magnetic reed switch on the CPU board and will start the auto zero routine.  Once the auto zero routine is complete (The LEDs will flash four times, with a few seconds pause between each flash) the wavelogger will go into the record mode.  At this time no LEDs should be flashing.  If they are you can diagnose the problem by following the instructions on the WaveloggerTroubleshooting page.
+Once the wavelogger is completely assembled it will be waiting for an activation signal before it runs its auto zero routine.  To start the logger you place a magnet on the outside of the housing near the CPU board.  This will activate the magnetic reed switch on the CPU board and will start the auto zero routine.  Once the auto zero routine is complete (The LEDs will flash four times, with a few seconds pause between each flash) the wavelogger will go into the record mode.  At this time no LEDs should be flashing.  If they are you can diagnose the problem by following the instructions on the [WaveloggerTroubleshooting] page.
 
 = Downloading =
 
@@ -69,7 +69,7 @@ Once the wavelogger has gathered the data required it is easy to download it fro
 
 = Processing =
 
-The first stages of processing the data can be done with the `process` tool found in the `wavelogger/tools/process/release` directory.  This program converts the binary file format written by the wavelogger into CSV files.  The simplest command line from the `wavelogger/tools` directory to process a file is:
+The first stages of processing the data can be done with the `process` tool found in the `wavelogger/tools/process/release` directory.  This program converts the binary file format written by the wavelogger into CSV files.  The simplest command line from the `wavelogger/tools/process` directory to process a file is:
 
 `./release/process -file wavedata.dat -output output.csv -start 0 -stop 4000000000`
 
