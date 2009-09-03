@@ -28,42 +28,50 @@ using namespace Files;
 /**********************************************************************************************************************/
 namespace CommandLine
 {
-    static Scalar<Path>		file    ("file",     false, Path("."),
-					 "Wavedata file to process.");
+    static Scalar<Path>		file       ("file",     false, Path("."),
+					    "Wavedata file to process.");
 
-    static Scalar<Path>		output  ("output",   true,  Path("."),
-					 "Filename for processed CSV data.");
+    static Scalar<Path>		output     ("output",   true,  Path("."),
+					    "Filename for processed CSV data.");
 
-    static Scalar<uint64>	start   ("start",    true,  0x0000000000000000,
-					 "Timestamp to start dumping from.");
+    static Scalar<bool>		battery    ("battery",  true,  false,
+					    "Output battery voltage data instead of wave data.");
 
-    static Scalar<uint64>	stop    ("stop",     true,  0x7fffffffffffffffll,
-					 "Timestamp to stop dumping at.");
+    static Scalar<bool>		temperature("temperature",  true,  false,
+					    "Output temperature data instead of wave data.");
 
-    static Scalar<bool>		average ("average",  true,  false,
-					 "Output average of each block of 200 samples.  Also output "
-					 "battery and temperature statistics.");
+    static Scalar<uint64>	start      ("start",    true,  0x0000000000000000,
+					    "Timestamp to start dumping from.");
 
-    static Scalar<float>	one_pos ("one-pos",  true,  1.0f,
-					 "First axis positive calibration factor in Antons/Newton.");
+    static Scalar<uint64>	stop       ("stop",     true,  0x7fffffffffffffffll,
+					    "Timestamp to stop dumping at.");
 
-    static Scalar<float>	one_neg ("one-neg",  true,  1.0f,
-					 "First axis negative calibration factor in Antons/Newton.");
+    static Scalar<bool>		average    ("average",  true,  false,
+					    "Output average of each block of 200 samples.  Also output "
+					    "battery and temperature statistics.");
 
-    static Scalar<int>		one_zero("one-zero", true,  512,
-					 "First axis zero in Antons.");
+    static Scalar<float>	one_pos    ("one-pos",  true,  1.0f,
+					    "First axis positive calibration factor in Antons/Newton.");
 
-    static Scalar<float>	two_pos ("two-pos",  true,  1.0f,
-					 "Second axis positive calibration factor in Antons/Newton.");
+    static Scalar<float>	one_neg    ("one-neg",  true,  1.0f,
+					    "First axis negative calibration factor in Antons/Newton.");
 
-    static Scalar<float>	two_neg ("two-neg",  true,  1.0f,
-					 "Second axis negative calibration factor in Antons/Newton.");
+    static Scalar<int>		one_zero   ("one-zero", true,  512,
+					    "First axis zero in Antons.");
 
-    static Scalar<int>		two_zero("two-zero", true,  512,
-					 "Second axis zero in Antons.");
+    static Scalar<float>	two_pos    ("two-pos",  true,  1.0f,
+					    "Second axis positive calibration factor in Antons/Newton.");
+
+    static Scalar<float>	two_neg    ("two-neg",  true,  1.0f,
+					    "Second axis negative calibration factor in Antons/Newton.");
+
+    static Scalar<int>		two_zero   ("two-zero", true,  512,
+					    "Second axis zero in Antons.");
 
     static Argument	*arguments[] = { &file,
 					 &output,
+					 &battery,
+					 &temperature,
 					 &start,
 					 &stop,
 					 &average,
@@ -79,6 +87,8 @@ namespace CommandLine
 bool	average      = false;
 bool	newtons      = false;
 bool	output       = false;
+bool	battery	     = false;
+bool	temperature  = false;
 
 uint64	start        = 0;
 uint64	stop         = 0;
@@ -131,98 +141,116 @@ void process_block(Block *block)
 
 	    if (output && (ticks + 200) >= start && ticks < stop)
 	    {
-		if (average)
+		if (battery || temperature)
 		{
-		    if (newtons)
+		    fprintf(output_file, "%lld, ", ticks);
+
+		    if (battery)
+			fprintf(output_file, "%ud", block->battery());
+
+		    if (battery && temperature)
+			fprintf(output_file, ", ");
+
+		    if (temperature)
+			fprintf(output_file, "%ud", block->temperature());
+
+		    fprintf(output_file, "\n");
+		}
+		else
+		{
+		    if (average)
 		    {
-			float	sample[3];
-			float	average[3];
-			float	min[3];
-			float	max[3];
-
-			sample[0] = get_newtons(block, 0, 0);
-			sample[1] = get_newtons(block, 0, 1);
-			sample[2] = ::sqrt(sample[0] * sample[0] + sample[1] * sample[1]);
-
-			for (uint i = 0; i < 3; ++i)
+			if (newtons)
 			{
-			    min[i]     = sample[i];
-			    max[i]     = sample[i];
-			    average[i] = sample[i];
-			}
+			    float	sample[3];
+			    float	average[3];
+			    float	min[3];
+			    float	max[3];
 
-			for (uint j = 1; j < 200; ++j)
-			{
-			    sample[0] = get_newtons(block, j, 0);
-			    sample[1] = get_newtons(block, j, 1);
+			    sample[0] = get_newtons(block, 0, 0);
+			    sample[1] = get_newtons(block, 0, 1);
 			    sample[2] = ::sqrt(sample[0] * sample[0] + sample[1] * sample[1]);
 
 			    for (uint i = 0; i < 3; ++i)
 			    {
-				if (min[i] > sample[i]) min[i] = sample[i];
-				if (max[i] < sample[i]) max[i] = sample[i];
-
-				average[i] += sample[i];
+				min[i]     = sample[i];
+				max[i]     = sample[i];
+				average[i] = sample[i];
 			    }
-			}
-
-			for (uint i = 0; i < 3; ++i)
-			    average[i] /= 200.0f;
-
-			fprintf(output_file, "%lld, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
-				ticks,
-				average[0], min[0], max[0],
-				average[1], min[1], max[1],
-				average[2], min[2], max[2]);
-		    }
-		    else
-		    {
-			float	average[2];
-			int	min[2];
-			int	max[2];
-
-			for (int i = 0; i < 2; ++i)
-			{
-			    min[i]     = block->sample(0, i) & 0xfff;
-			    max[i]     = min[i];
-			    average[i] = min[i];
 
 			    for (uint j = 1; j < 200; ++j)
 			    {
-				int	sample = block->sample(j, i) & 0xfff;
+				sample[0] = get_newtons(block, j, 0);
+				sample[1] = get_newtons(block, j, 1);
+				sample[2] = ::sqrt(sample[0] * sample[0] + sample[1] * sample[1]);
 
-				if (min[i] > sample) min[i] = sample;
-				if (max[i] < sample) max[i] = sample;
+				for (uint i = 0; i < 3; ++i)
+				{
+				    if (min[i] > sample[i]) min[i] = sample[i];
+				    if (max[i] < sample[i]) max[i] = sample[i];
 
-				average[i] += sample;
+				    average[i] += sample[i];
+				}
 			    }
 
-			    average[i] /= 200.0f;
-			}
+			    for (uint i = 0; i < 3; ++i)
+				average[i] /= 200.0f;
 
-			fprintf(output_file, "%lld, %f, %d, %d, %f, %d, %d\n",
-				ticks,
-				average[0], min[0], max[0],
-				average[1], min[1], max[1]);
-		    }
-		}
-		else
-		{
-		    for (uint i = 0; i < 200; ++i)
-		    {
-			if (newtons)
-			{
-			    float	one_N = get_newtons(block, i, 0);
-			    float	two_N = get_newtons(block, i, 1);
-
-			    fprintf(output_file, "%lld, %f, %f\n", ticks + i, one_N, two_N);
+			    fprintf(output_file, "%lld, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
+				    ticks,
+				    average[0], min[0], max[0],
+				    average[1], min[1], max[1],
+				    average[2], min[2], max[2]);
 			}
 			else
 			{
-			    int		one   = block->sample(i, 0) & 0xfff;
-			    int		two   = block->sample(i, 1) & 0xfff;
+			    float	average[2];
+			    int		min[2];
+			    int		max[2];
 
-			    fprintf(output_file, "%lld, %d, %d\n", ticks + i, one, two);
+			    for (int i = 0; i < 2; ++i)
+			    {
+				min[i]     = block->sample(0, i) & 0xfff;
+				max[i]     = min[i];
+				average[i] = min[i];
+
+				for (uint j = 1; j < 200; ++j)
+				{
+				    int	sample = block->sample(j, i) & 0xfff;
+
+				    if (min[i] > sample) min[i] = sample;
+				    if (max[i] < sample) max[i] = sample;
+
+				    average[i] += sample;
+				}
+
+				average[i] /= 200.0f;
+			    }
+
+			    fprintf(output_file, "%lld, %f, %d, %d, %f, %d, %d\n",
+				    ticks,
+				    average[0], min[0], max[0],
+				    average[1], min[1], max[1]);
+			}
+		    }
+		    else
+		    {
+			for (uint i = 0; i < 200; ++i)
+			{
+			    if (newtons)
+			    {
+				float	one_N = get_newtons(block, i, 0);
+				float	two_N = get_newtons(block, i, 1);
+
+				fprintf(output_file, "%lld, %f, %f\n", ticks + i, one_N, two_N);
+			    }
+			    else
+			    {
+				int	one   = block->sample(i, 0) & 0xfff;
+				int	two   = block->sample(i, 1) & 0xfff;
+
+				fprintf(output_file, "%lld, %d, %d\n", ticks + i, one, two);
+			    }
 			}
 		    }
 		}
@@ -243,22 +271,24 @@ int main(int argc, const char **argv)
 
     CheckCleanup(CommandLine::parse(argc, argv, CommandLine::arguments), parse_failure);
 
-    average  = CommandLine::average.get();
-    newtons  = (CommandLine::one_pos.set() |
-		CommandLine::one_neg.set() |
-		CommandLine::two_pos.set() |
-		CommandLine::two_neg.set());
-    output   = CommandLine::output.set();
+    average     = CommandLine::average.get();
+    newtons     = (CommandLine::one_pos.set() |
+		   CommandLine::one_neg.set() |
+		   CommandLine::two_pos.set() |
+		   CommandLine::two_neg.set());
+    output      = CommandLine::output.set();
+    battery     = CommandLine::battery.set();
+    temperature = CommandLine::temperature.set();
 
-    start    = CommandLine::start.get();
-    stop     = CommandLine::stop.get();
+    start       = CommandLine::start.get();
+    stop        = CommandLine::stop.get();
 
-    one_pos  = CommandLine::one_pos.get();
-    one_neg  = CommandLine::one_neg.get();
-    one_zero = CommandLine::one_zero.get();
-    two_pos  = CommandLine::two_pos.get();
-    two_neg  = CommandLine::two_neg.get();
-    two_zero = CommandLine::two_zero.get();
+    one_pos     = CommandLine::one_pos.get();
+    one_neg     = CommandLine::one_neg.get();
+    one_zero    = CommandLine::one_zero.get();
+    two_pos     = CommandLine::two_pos.get();
+    two_neg     = CommandLine::two_neg.get();
+    two_zero    = CommandLine::two_zero.get();
 
     /*********************************************************************************************/
     if (output)
@@ -268,6 +298,22 @@ int main(int argc, const char **argv)
 	CheckCleanupStringB(output_file, failure, "Failed to open file (%s) for writing.",
 			    CommandLine::output.get().get().str());
 
+	if (battery || temperature)
+	{
+	    fprintf(output_file, "timestamp, ");
+
+	    if (battery)
+		fprintf(output_file, "battery");
+
+	    if (battery && temperature)
+		fprintf(output_file, ", ");
+
+	    if (temperature)
+		fprintf(output_file, "temperature");
+
+	    fprintf(output_file, "\n");
+	}
+	else
 	{
 	    const char	*units;
 

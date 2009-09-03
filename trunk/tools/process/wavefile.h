@@ -96,6 +96,8 @@ public:
     Type   type();
     uint64 ticks();
     uint16 sample(int tick, int channel);
+    uint8  battery();
+    uint8  temperature();
 };
 /**********************************************************************************************************************/
 class Sequence
