@@ -137,6 +137,7 @@ void process_block(Block *block)
     switch (block->type())
     {
 	case Block::data:
+	case Block::data_broken_rtc:
 	    ++count;
 
 	    if (output && (ticks + 200) >= start && ticks < stop)
