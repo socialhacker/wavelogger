@@ -125,7 +125,7 @@ static void analog_tick()
     {
 	case 0:
 	{
-	    data->type                 = 0x01;
+	    data->type                 = 0x02;
 	    data->rtc_years            = 0;
 	    data->rtc_ticks            = 0;
 	    data->internal_temperature = 0;
