@@ -23,6 +23,31 @@ using namespace Data;
 using namespace Files;
 
 /**********************************************************************************************************************/
+static bool blocks_are_not_contiguous(Block *previous, Block *current)
+{
+    CheckAssertB(previous->type() == current->type());
+    CheckAssertB(current->type() == Block::data ||
+		 current->type() == Block::data_broken_rtc);
+
+    uint32	current_ticks  = current->ticks();
+    uint32	previous_ticks = previous->ticks();
+    uint const	threshold      = 20;
+
+    switch (current->type())
+    {
+	case Block::data:
+	    return (abs(current_ticks - previous_ticks - 200) > threshold);
+
+	case Block::data_broken_rtc:
+	    return (abs(current_ticks - previous_ticks - 200) > threshold);
+
+	default:
+	    CheckAssertB(false);
+    }
+
+    return false;
+}
+/**********************************************************************************************************************/
 Block::Block() :
     _offset(0),
     _type(invalid),
@@ -265,7 +290,7 @@ Error Wavefile::read_sequence(Segment *segment)
     while (_block->type() == Block::data ||
 	   _block->type() == Block::data_broken_rtc)
     {
-	if (ticks != uint64(-1) && abs(_block->ticks() - _old_block->ticks() - 200) > 20)
+	if ((ticks != uint64(-1)) && blocks_are_not_contiguous(_old_block, _block))
 	    break;
 
 	Check(match(_block->type()));
