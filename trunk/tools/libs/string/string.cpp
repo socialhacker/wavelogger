@@ -191,7 +191,7 @@ String String::erase(unsigned int position, unsigned int count) const
 /*********************************************************************************************************************/
 int String::find(unsigned int position, const String string) const
 {
-    char	*result = strstr(*this, string);
+    const char	*result = strstr(*this, string);
 
     if (result)
 	return (result - _contents->_data);
