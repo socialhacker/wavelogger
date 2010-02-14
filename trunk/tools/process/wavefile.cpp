@@ -72,7 +72,8 @@ Error Block::read(int file)
 	default:   _type = invalid;         break;
     }
 
-    if (_type == data)
+    if (_type == data ||
+	_type == data_broken_rtc)
 	_ticks = _data.rtc_ticks;
 
     return success;
@@ -95,7 +96,8 @@ uint64 Block::ticks()
 /**********************************************************************************************************************/
 uint16 Block::sample(int tick, int channel)
 {
-    if (_type != data)
+    if (_type != data &&
+	_type != data_broken_rtc)
 	return 0;
 
     const AnalogSample	&sample = _data.sample[tick >> 1];
@@ -244,7 +246,8 @@ Error Wavefile::read_segment()
 
     Segment	*segment = new Segment(_old_block);
 
-    while (_block->type() == Block::data)
+    while (_block->type() == Block::data ||
+	   _block->type() == Block::data_broken_rtc)
 	Check(read_sequence(segment));
 
     _segments.append(segment);
@@ -259,12 +262,13 @@ Error Wavefile::read_sequence(Segment *segment)
     uint64	ticks     = uint64(-1);
     Sequence	*sequence = new Sequence();
 
-    while (_block->type() == Block::data)
+    while (_block->type() == Block::data ||
+	   _block->type() == Block::data_broken_rtc)
     {
 	if (ticks != uint64(-1) && abs(_block->ticks() - _old_block->ticks() - 200) > 20)
 	    break;
 
-	Check(match(Block::data));
+	Check(match(_block->type()));
 
 	ticks = _old_block->ticks();
 
