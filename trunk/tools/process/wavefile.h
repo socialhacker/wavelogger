@@ -36,12 +36,13 @@ class Block
 public:
     enum Type
     {
-	unknown = 0,
-	invalid = 1,
-	empty   = 2,
-	header  = 3,
-	data    = 4,
-	eof     = 5
+	unknown         = 0,
+	invalid         = 1,
+	empty           = 2,
+	header          = 3,
+	data            = 4,
+	data_broken_rtc = 5,
+	eof             = 6
     };
 
 private:

@@ -66,9 +66,10 @@ Error Block::read(int file)
 
     switch (_data.type)
     {
-	case 0x00: _type = header;  break;
-	case 0x01: _type = data;    break;
-	default:   _type = invalid; break;
+	case 0x00: _type = header;          break;
+	case 0x01: _type = data_broken_rtc; break;
+	case 0x02: _type = data;            break;
+	default:   _type = invalid;         break;
     }
 
     if (_type == data)
