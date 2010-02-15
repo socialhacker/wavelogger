@@ -132,7 +132,7 @@ uint32 rtc_ticks(const uint8 *data)
     if ((data[3] & 0x60) == 0x60)
 	hours += 12;
 
-    ticks = days + bcd_to_binary(data[5]);
+    ticks = days + bcd_to_binary(data[5]) - 1;
     ticks = ticks *  24 + hours;
     ticks = ticks *  60 + bcd_to_binary(data[2]); // minutes
     ticks = ticks *  60 + bcd_to_binary(data[1]); // seconds
