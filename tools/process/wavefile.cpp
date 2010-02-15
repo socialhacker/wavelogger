@@ -23,6 +23,22 @@ using namespace Data;
 using namespace Files;
 
 /**********************************************************************************************************************/
+bool	hour_invertable[24] = {false, false, false, true,  true,  true,
+			       true,  true,  true,  true,  true,  false,
+			       true,  true,  true,  true,  true,  true,
+			       true,  false, false, false, false, false};
+
+uint8	hour_inverse[24] = { 0,  0,  0,  4,  5,  6,  // 0x00 - 0x05
+			     7,  8,  9, 10, 11,  0,  // 0x06 - 0x0b
+			    13, 14, 15, 16, 17, 18,  // 0x0a - 0x11
+			    19,  0,  0,  0,  0,  0}; // 0x12 - 0x18
+
+/**********************************************************************************************************************/
+static int get_hour_from_ticks(uint32 ticks)
+{
+    return (ticks / (100 * 60 * 60)) % 24;
+}
+/**********************************************************************************************************************/
 static bool blocks_are_not_contiguous(Block *previous, Block *current)
 {
     CheckAssertB(previous->type() == current->type());
