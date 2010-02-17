@@ -283,13 +283,16 @@ Error Wavefile::read_segment()
 {
     printf("Reading segment  at 0x%08llx\n", (int64)_block->offset());
 
-    match(Block::header);
+    Check(match(Block::header));
 
     Segment	*segment = new Segment(_old_block);
 
     while (_block->type() == Block::data ||
 	   _block->type() == Block::data_broken_rtc)
 	Check(read_sequence(segment));
+
+    while (_block->type() == Block::empty)
+	Check(match(Block::empty));
 
     _segments.append(segment);
 
@@ -327,11 +330,7 @@ Error Wavefile::match(const Block::Type type)
 
     swap(_block, _old_block);
 
-    do
-    {
-	_block->read(_file);
-    }
-    while (_block->type() == Block::empty);
+    _block->read(_file);
 
     if (_callback)
 	_callback(_block);
