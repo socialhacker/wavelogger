@@ -64,114 +64,6 @@ static bool blocks_are_not_contiguous(Block *previous, Block *current)
     return false;
 }
 /**********************************************************************************************************************/
-Block::Block() :
-    _offset(0),
-    _type(invalid),
-    _ticks(0)
-{
-}
-/**********************************************************************************************************************/
-Error Block::read(int file)
-{
-    ssize_t	length;
-
-    CheckP(length  = ::read(file, _buffer, 512));
-    CheckP(_offset = lseek(file, 0, SEEK_CUR));
-
-    _offset -= 512;
-    _type    = data;
-    _ticks   = 0;
-
-    if (length != 512)
-    {
-	if (length == 0)
-	    _type = eof;
-	else
-	    _type = invalid;
-
-	return success;
-    }
-
-    {
-	uint32	sum = 0;
-
-	for (int i = 0; i < 512; ++i)
-	    sum += _buffer[i];
-
-	if (sum == 0)
-	{
-	    _type = empty;
-	    return success;
-	}
-    }
-
-    switch (_data.type)
-    {
-	case 0x00: _type = header;          break;
-	case 0x01: _type = data_broken_rtc; break;
-	case 0x02: _type = data;            break;
-	default:   _type = invalid;         break;
-    }
-
-    if (_type == data ||
-	_type == data_broken_rtc)
-	_ticks = _data.rtc_ticks;
-
-    return success;
-}
-/**********************************************************************************************************************/
-off_t Block::offset()
-{
-    return _offset;
-}
-/**********************************************************************************************************************/
-Block::Type Block::type()
-{
-    return _type;
-}
-/**********************************************************************************************************************/
-uint64 Block::ticks()
-{
-    return _ticks;
-}
-/**********************************************************************************************************************/
-uint16 Block::sample(int tick, int channel)
-{
-    if (_type != data &&
-	_type != data_broken_rtc)
-	return 0;
-
-    const AnalogSample	&sample = _data.sample[tick >> 1];
-
-    switch (channel)
-    {
-	case 0:
-	    if ((tick & 1) == 0)
-		return sample.data[1] | ((sample.data[0] & 0xc0) << 2);
-	    else
-		return sample.data[3] | ((sample.data[0] & 0x0c) << 6);
-
-	case 1:
-	    if ((tick & 1) == 0)
-		return sample.data[2] | ((sample.data[0] & 0x30) << 4);
-	    else
-		return sample.data[4] | ((sample.data[0] & 0x03) << 8);
-
-	default:
-	    return 0;
-    }
-}
-/**********************************************************************************************************************/
-uint8 Block::battery()
-{
-    return _data.battery;
-}
-/**********************************************************************************************************************/
-uint8 Block::temperature()
-{
-    return _data.internal_temperature;
-}
-/**********************************************************************************************************************/
 Sequence::Sequence() :
     _start(uint64(-1)),
     _stop(uint64(-1)),
@@ -249,11 +141,15 @@ void Segment::debug_print(int indent)
 	_sequences[i]->debug_print(indent + 4);
 }
 /**********************************************************************************************************************/
+static void null_callback(Block *block)
+{
+}
+/**********************************************************************************************************************/
 Wavefile::Wavefile() :
     _block(new Block()),
     _old_block(new Block()),
     _file(-1),
-    _callback(null)
+    _callback(null_callback)
 {
 }
 /**********************************************************************************************************************/
@@ -266,6 +162,8 @@ Wavefile::~Wavefile()
 Error Wavefile::read(Path path, ProcessBlockCallback callback)
 {
     const char	*filename = path.get().str();
+
+    CheckB(callback);
 
     _callback = callback;
 
@@ -284,6 +182,7 @@ Error Wavefile::read_segment()
     printf("Reading segment  at 0x%08llx\n", (int64)_block->offset());
 
     Check(match(Block::header));
+    _callback(_old_block);
 
     Segment	*segment = new Segment(_old_block);
 
@@ -313,6 +212,7 @@ Error Wavefile::read_sequence(Segment *segment)
 	    break;
 
 	Check(match(_block->type()));
+	_callback(_old_block);
 
 	ticks = _old_block->ticks();
 
@@ -331,9 +231,6 @@ Error Wavefile::match(const Block::Type type)
     swap(_block, _old_block);
 
     _block->read(_file);
-
-    if (_callback)
-	_callback(_block);
 
     return success;
 }
