@@ -64,6 +64,23 @@ static bool blocks_are_not_contiguous(Block *previous, Block *current)
     return false;
 }
 /**********************************************************************************************************************/
+class Sequence
+{
+    typedef Err::Error	Error;
+
+    uint64	_start;
+    uint64	_stop;
+    uint32	_length;
+
+public:
+    Sequence();
+
+    Error add_block(Block *block);
+    uint32 length();
+
+    void debug_print(int indent);
+};
+/**********************************************************************************************************************/
 Sequence::Sequence() :
     _start(uint64(-1)),
     _stop(uint64(-1)),
@@ -116,6 +133,22 @@ void Sequence::debug_print(int indent)
     printf("%*s    stop.....: %lld : %s", indent, "", _stop,  ctime(&stop));
     printf("%*s    hours....: %0.2f\n",   indent, "", hours);
 }
+/**********************************************************************************************************************/
+class Segment
+{
+    typedef Err::Error	Error;
+
+    off_t			_offset;
+    uint32			_length;
+    Data::Array<Sequence *>	_sequences;
+
+public:
+    Segment(Block *header);
+
+    Error add_sequence(Sequence *sequence);
+
+    void debug_print(int indent);
+};
 /**********************************************************************************************************************/
 Segment::Segment(Block *header) :
     _offset(header->offset()),

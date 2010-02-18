@@ -31,52 +31,19 @@
 #include "process/block.h"
 
 /**********************************************************************************************************************/
-class Sequence
-{
-    typedef Err::Error	Error;
-
-    uint64	_start;
-    uint64	_stop;
-    uint32	_length;
-
-public:
-    Sequence();
-
-    Error add_block(Block *block);
-    uint32 length();
-
-    void debug_print(int indent);
-};
-/**********************************************************************************************************************/
-class Segment
-{
-    typedef Err::Error	Error;
-
-    off_t			_offset;
-    uint32			_length;
-    Data::Array<Sequence *>	_sequences;
-
-public:
-    Segment(Block *header);
-
-    Error add_sequence(Sequence *sequence);
-
-    void debug_print(int indent);
-};
-/**********************************************************************************************************************/
 class Wavefile
 {
     typedef Err::Error	Error;
     typedef void (*ProcessBlockCallback)(Block *block);
 
-    Block			*_block;
-    Block			*_old_block;
-    int				_file;
-    Data::Array<Segment *>	_segments;
-    ProcessBlockCallback	_callback;
+    Block				*_block;
+    Block				*_old_block;
+    int					_file;
+    Data::Array<class Segment *>	_segments;
+    ProcessBlockCallback		_callback;
 
     Error read_segment();
-    Error read_sequence(Segment *segment);
+    Error read_sequence(class Segment *segment);
     Error match(const Block::Type type);
 
 public:
