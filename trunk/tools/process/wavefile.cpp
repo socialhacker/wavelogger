@@ -68,29 +68,52 @@ class Sequence
 {
     typedef Err::Error	Error;
 
-    uint64	_start;
-    uint64	_stop;
-    uint32	_length;
+    bool			_scanning;
+    uint64			_start;
+    uint64			_stop;
+    uint32			_length;
+    Data::Array<Block *>	_blocks;
 
 public:
     Sequence();
 
-    Error add_block(Block *block);
+    Error add_block(Block *block, Wavefile::ProcessBlockCallback callback);
     uint32 length();
 
     void debug_print(int indent);
 };
 /**********************************************************************************************************************/
 Sequence::Sequence() :
+    _scanning(true),
     _start(uint64(-1)),
     _stop(uint64(-1)),
     _length(0)
 {
 }
 /**********************************************************************************************************************/
-Error Sequence::add_block(Block *block)
+Error Sequence::add_block(Block *block, Wavefile::ProcessBlockCallback callback)
 {
     uint64	ticks = block->ticks();
+
+    if (_scanning)
+    {
+	int	hour       = get_hour_from_ticks(ticks);
+	bool	invertable = hour_invertable[hour];
+
+	if (invertable)
+	{
+	    printf("Done scanning\n");
+	    _scanning = false;
+	}
+
+	callback(block);
+    }
+    else
+    {
+	callback(block);
+    }
+
+    _blocks.append(block);
 
     if (_start == uint64(-1))
 	_start = ticks;
@@ -245,11 +268,10 @@ Error Wavefile::read_sequence(Segment *segment)
 	    break;
 
 	Check(match(_block->type()));
-	_callback(_old_block);
 
 	ticks = _old_block->ticks();
 
-	Check(sequence->add_block(_old_block));
+	Check(sequence->add_block(_old_block, _callback));
     }
 
     Check(segment->add_sequence(sequence));

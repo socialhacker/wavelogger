@@ -33,8 +33,11 @@
 /**********************************************************************************************************************/
 class Wavefile
 {
-    typedef Err::Error	Error;
+public:
     typedef void (*ProcessBlockCallback)(Block *block);
+
+private:
+    typedef Err::Error	Error;
 
     Block				*_block;
     Block				*_old_block;
