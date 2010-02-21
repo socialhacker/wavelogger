@@ -88,6 +88,12 @@ private:
     off_t	_offset;
     Type	_type;
     uint32	_ticks;
+    uint	_reference_count;
+
+    /*
+     * Blocks are reference counted, you can't delete them manually.
+     */
+    ~Block();
 
 public:
     Block();
@@ -99,6 +105,9 @@ public:
     uint16 sample(int tick, int channel);
     uint8  battery();
     uint8  temperature();
+
+    void add_reference();
+    void remove_reference();
 };
 /**********************************************************************************************************************/
 

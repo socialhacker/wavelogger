@@ -43,7 +43,7 @@ private:
     Data::Array<Block *>	_blocks;
 
 public:
-    Sequence(Block *header);
+    Sequence(off_t offset);
 
     Error add_block       (Block *block, ProcessBlockCallback callback);
     Error add_broken_block(Block *block, ProcessBlockCallback callback);

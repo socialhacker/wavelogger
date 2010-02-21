@@ -38,7 +38,6 @@ class Wavefile
     typedef Err::Error	Error;
 
     Block				*_block;
-    Block				*_old_block;
     int					_file;
     Data::Array<class Sequence *>	_sequences;
     Sequence::ProcessBlockCallback	_callback;

@@ -57,31 +57,40 @@ static uint32 zero_hour_from_ticks(uint32 ticks)
     return (days * ticks_per_day) + partial_hour;
 }
 /**********************************************************************************************************************/
+static uint32 invert_ticks(uint32 ticks)
+{
+    int		hour      = get_hour_from_ticks(ticks);
+    int		new_ticks = zero_hour_from_ticks(ticks);
+    int		new_hour  = hour_inverse[hour];
+
+    new_ticks += new_hour * ticks_per_hour;
+
+    return new_ticks;
+}
+/**********************************************************************************************************************/
 static bool blocks_are_contiguous(uint32 previous, uint32 current)
 {
-    uint const	threshold = 20;
+    int const	threshold = 20;
 
     return (abs(current - previous) < threshold);
 
     return false;
 }
 /**********************************************************************************************************************/
-Sequence::Sequence(Block *header) :
-    _offset(header->offset()),
+Sequence::Sequence(off_t offset) :
+    _offset(offset),
     _scanning(true),
     _start(uint32(-1)),
     _stop(uint32(-1)),
     _length(0)
 {
-    CheckAssertB(header->type() == Block::header);
 }
 /**********************************************************************************************************************/
 Error Sequence::add_block(Block *block, ProcessBlockCallback callback)
 {
     uint32	ticks = block->ticks();
 
-    CheckAssertB(block->type() == Block::data ||
-		 block->type() == Block::data_broken_rtc);
+    CheckAssertB(block->type() == Block::data);
 
     CheckB(_start == uint32(-1) || blocks_are_contiguous(_stop, ticks));
 
@@ -100,8 +109,7 @@ Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
 {
     uint32	ticks = block->ticks();
 
-    CheckAssertB(block->type() == Block::data ||
-		 block->type() == Block::data_broken_rtc);
+    CheckAssertB(block->type() == Block::data_broken_rtc);
 
     {
 	uint32	cleaned_stop  = get_partial_hour_from_ticks(_stop);
@@ -115,6 +123,8 @@ Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
 	int	hour       = get_hour_from_ticks(ticks);
 	bool	invertable = hour_invertable[hour];
 
+	block->add_reference();
+
 	_blocks.append(block);
 
 	if (invertable)
@@ -124,7 +134,11 @@ Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
 	    _scanning = false;
 
 	    for (uint i = 0; i < _blocks.count(); ++i)
+	    {
 		callback(_blocks[i]);
+
+		_blocks[i]->remove_reference();
+	    }
 	}
     }
     else
@@ -148,11 +162,11 @@ uint32 Sequence::length()
 /**********************************************************************************************************************/
 void Sequence::debug_print(int indent)
 {
-    int32	delta = _stop - _start;
-    float	hours = float(delta) / float(100 * 60 * 60);
-    time_t	start = _start / 100;
-    time_t	stop  = _stop  / 100;
-    struct tm	delta_tm;
+    int32	delta    = _stop - _start;
+    float	hours    = float(delta) / float(100 * 60 * 60);
+    time_t	start    = _start / 100;
+    time_t	stop     = _stop  / 100;
+    struct tm	delta_tm = {0};
     time_t	delta_time;
 
     delta_tm.tm_sec  = 0;
