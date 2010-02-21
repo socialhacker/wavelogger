@@ -39,27 +39,11 @@ static int get_hour_from_ticks(uint32 ticks)
     return (ticks / (100 * 60 * 60)) % 24;
 }
 /**********************************************************************************************************************/
-static bool blocks_are_not_contiguous(Block *previous, Block *current)
+static bool blocks_are_contiguous(uint32 previous, uint32 current)
 {
-    CheckAssertB(previous->type() == current->type());
-    CheckAssertB(current->type() == Block::data ||
-		 current->type() == Block::data_broken_rtc);
+    uint const	threshold = 20;
 
-    uint32	current_ticks  = current->ticks();
-    uint32	previous_ticks = previous->ticks();
-    uint const	threshold      = 20;
-
-    switch (current->type())
-    {
-	case Block::data:
-	    return (abs(current_ticks - previous_ticks - 200) > threshold);
-
-	case Block::data_broken_rtc:
-	    return (abs(current_ticks - previous_ticks - 200) > threshold);
-
-	default:
-	    CheckAssertB(false);
-    }
+    return (abs(current - previous - 200) < threshold);
 
     return false;
 }
@@ -77,7 +61,8 @@ class Sequence
 public:
     Sequence();
 
-    Error add_block(Block *block, Wavefile::ProcessBlockCallback callback);
+    Error add_block       (Block *block, Wavefile::ProcessBlockCallback callback);
+    Error add_broken_block(Block *block, Wavefile::ProcessBlockCallback callback);
     uint32 length();
 
     void debug_print(int indent);
@@ -95,25 +80,52 @@ Error Sequence::add_block(Block *block, Wavefile::ProcessBlockCallback callback)
 {
     uint64	ticks = block->ticks();
 
+    CheckAssertB(block->type() == Block::data ||
+		 block->type() == Block::data_broken_rtc);
+
+    CheckB(_start == uint64(-1) || blocks_are_contiguous(_stop, ticks));
+
+    callback(block);
+
+    if (_start == uint64(-1))
+	_start = ticks;
+
+    _stop    = ticks + 200;
+    _length += 512;
+
+    return success;
+}
+/**********************************************************************************************************************/
+Error Sequence::add_broken_block(Block *block, Wavefile::ProcessBlockCallback callback)
+{
+    uint64	ticks = block->ticks();
+
+    CheckAssertB(block->type() == Block::data ||
+		 block->type() == Block::data_broken_rtc);
+
+    CheckB(_start == uint64(-1) || blocks_are_contiguous(_stop, ticks));
+
     if (_scanning)
     {
 	int	hour       = get_hour_from_ticks(ticks);
 	bool	invertable = hour_invertable[hour];
 
+	_blocks.append(block);
+
 	if (invertable)
 	{
-	    printf("Done scanning\n");
-	    _scanning = false;
-	}
+	    printf("Done scanning after %d blocks. (%d)\n", _blocks.count(), hour);
 
-	callback(block);
+	    _scanning = false;
+
+	    for (uint i = 0; i < _blocks.count(); ++i)
+		callback(_blocks[i]);
+	}
     }
     else
     {
 	callback(block);
     }
-
-    _blocks.append(block);
 
     if (_start == uint64(-1))
 	_start = ticks;
@@ -258,20 +270,26 @@ Error Wavefile::read_sequence(Segment *segment)
 {
     printf("Reading sequence at 0x%08llx (0x%08llx)\n", (int64)_block->offset(), _block->ticks());
 
-    uint64	ticks     = uint64(-1);
     Sequence	*sequence = new Sequence();
 
     while (_block->type() == Block::data ||
 	   _block->type() == Block::data_broken_rtc)
     {
-	if ((ticks != uint64(-1)) && blocks_are_not_contiguous(_old_block, _block))
-	    break;
+	switch (_block->type())
+	{
+	    case Block::data:
+		Check(sequence->add_block(_block, _callback));
+		break;
+
+	    case Block::data_broken_rtc:
+		Check(sequence->add_broken_block(_block, _callback));
+		break;
+
+	    default:
+		CheckAssertB(false);
+	}
 
 	Check(match(_block->type()));
-
-	ticks = _old_block->ticks();
-
-	Check(sequence->add_block(_old_block, _callback));
     }
 
     Check(segment->add_sequence(sequence));
