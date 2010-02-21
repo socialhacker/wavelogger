@@ -15,44 +15,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __process_wavefile_h__
-#define __process_wavefile_h__
+#ifndef __process_sequence_h__
+#define __process_sequence_h__
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h>
 #include <unistd.h>
 
 #include "globals.h"
 #include "libs/error/error.h"
 #include "libs/data/array.h"
-#include "libs/files/path.h"
 
 #include "process/block.h"
-#include "process/sequence.h"
 
 /**********************************************************************************************************************/
-class Wavefile
+class Sequence
 {
+public:
+    typedef void (*ProcessBlockCallback)(Block *block);
+
+private:
     typedef Err::Error	Error;
 
-    Block				*_block;
-    Block				*_old_block;
-    int					_file;
-    Data::Array<class Sequence *>	_sequences;
-    Sequence::ProcessBlockCallback	_callback;
-
-    Error read_sequence();
-    Error match(const Block::Type type);
+    off_t			_offset;
+    bool			_scanning;
+    uint32			_start;
+    uint32			_stop;
+    uint32			_length;
+    Data::Array<Block *>	_blocks;
 
 public:
-    Wavefile();
-    virtual ~Wavefile();
+    Sequence(Block *header);
 
-    Error read(Files::Path path, Sequence::ProcessBlockCallback callback);
+    Error add_block       (Block *block, ProcessBlockCallback callback);
+    Error add_broken_block(Block *block, ProcessBlockCallback callback);
+    uint32 length();
+
     void debug_print(int indent);
 };
 /**********************************************************************************************************************/
 
-#endif //__process_wavefile_h__
+#endif //__process_sequence_h__

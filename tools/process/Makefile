@@ -19,7 +19,7 @@ depth			:= ../..
 products		:= process
 
 process[type]		:= program
-process[cpp_files]	:= process.cpp wavefile.cpp block.cpp
+process[cpp_files]	:= process.cpp wavefile.cpp block.cpp sequence.cpp
 process[libs]		:= command_line:command_line
 
 include $(depth)/build/Makefile.native

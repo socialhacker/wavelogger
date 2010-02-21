@@ -87,7 +87,7 @@ private:
 
     off_t	_offset;
     Type	_type;
-    uint64	_ticks;
+    uint32	_ticks;
 
 public:
     Block();
@@ -95,7 +95,7 @@ public:
     Error  read(int file);
     off_t  offset();
     Type   type();
-    uint64 ticks();
+    uint32 ticks();
     uint16 sample(int tick, int channel);
     uint8  battery();
     uint8  temperature();
