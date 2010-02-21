@@ -30,7 +30,6 @@ static void null_callback(Block *block)
 /**********************************************************************************************************************/
 Wavefile::Wavefile() :
     _block(new Block()),
-    _old_block(new Block()),
     _file(-1),
     _callback(null_callback)
 {
@@ -38,8 +37,10 @@ Wavefile::Wavefile() :
 /**********************************************************************************************************************/
 Wavefile::~Wavefile()
 {
-    delete _block;
-    delete _old_block;
+    _block->remove_reference();
+
+    for (uint i = 0; i < _sequences.length(); ++i)
+	delete _sequences[i];
 }
 /**********************************************************************************************************************/
 Error Wavefile::read(Path path, Sequence::ProcessBlockCallback callback)
@@ -62,46 +63,63 @@ Error Wavefile::read(Path path, Sequence::ProcessBlockCallback callback)
 /**********************************************************************************************************************/
 Error Wavefile::read_sequence()
 {
+    Error	check_error = success;
+    off_t	offset      = static_cast<off_t>(-1);
+
+    if (_block->type() == Block::header)
+    {
+	offset = _block->offset();
+	_callback(_block);
+    }
+
     Check(match(Block::header));
-    _callback(_old_block);
 
-    printf("Reading sequence at 0x%08llx (0x%08x)\n", (int64)_block->offset(), _block->ticks());
+    printf("Reading sequence at 0x%08llx (0x%08x)\n", (int64)offset, _block->ticks());
 
-    Sequence	*sequence = new Sequence(_old_block);
+    Sequence *	sequence = new Sequence(offset);
 
     while (_block->type() == Block::data ||
 	   _block->type() == Block::data_broken_rtc)
     {
-	switch (_block->type())
+	Block::Type	type = _block->type();
+
+	switch (type)
 	{
 	    case Block::data:
-		Check(sequence->add_block(_block, _callback));
+		CheckCleanup(sequence->add_block(_block, _callback), failure);
 		break;
 
 	    case Block::data_broken_rtc:
-		Check(sequence->add_broken_block(_block, _callback));
+		CheckCleanup(sequence->add_broken_block(_block, _callback), failure);
 		break;
 
 	    default:
 		CheckAssertB(false);
 	}
 
-	Check(match(_block->type()));
+	CheckCleanup(match(type), failure);
     }
 
     while (_block->type() == Block::empty)
-	Check(match(Block::empty));
+	CheckCleanup(match(Block::empty), failure);
 
     _sequences.append(sequence);
 
     return success;
+
+  failure:
+    delete sequence;
+
+    return check_error;
 }
 /**********************************************************************************************************************/
 Error Wavefile::match(const Block::Type type)
 {
     CheckStringB(type == _block->type(), "Missmatched block type %d != %d", type, _block->type());
 
-    swap(_block, _old_block);
+    _block->remove_reference();
+
+    _block = new Block();
 
     _block->read(_file);
 
