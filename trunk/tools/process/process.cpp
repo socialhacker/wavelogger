@@ -147,13 +147,13 @@ void process_block(Block *block)
 		    fprintf(output_file, "%lld, ", ticks);
 
 		    if (battery)
-			fprintf(output_file, "%ud", block->battery());
+			fprintf(output_file, "%u", block->battery());
 
 		    if (battery && temperature)
 			fprintf(output_file, ", ");
 
 		    if (temperature)
-			fprintf(output_file, "%ud", block->temperature());
+			fprintf(output_file, "%u", block->temperature());
 
 		    fprintf(output_file, "\n");
 		}

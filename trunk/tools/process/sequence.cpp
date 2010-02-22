@@ -23,6 +23,11 @@ using namespace Err;
 using namespace Data;
 
 /**********************************************************************************************************************/
+static const uint8	hour_conversion[24] = {11,  0,  1,  2,  3,  4,
+					        5,  6,  7,  8,  9, 10,
+					       11, 12, 13, 14, 15, 16,
+					       17, 18, 11,  0,  1,  2};
+
 static const bool	hour_invertable[24] = {false, false, false, true,  true,  true,
 					       true,  true,  true,  true,  true,  false,
 					       true,  true,  true,  true,  true,  true,
@@ -57,6 +62,18 @@ static uint32 zero_hour_from_ticks(uint32 ticks)
     return (days * ticks_per_day) + partial_hour;
 }
 /**********************************************************************************************************************/
+static uint32 convert_ticks(uint32 ticks)
+{
+    int		hour      = get_hour_from_ticks(ticks);
+    int		new_ticks = zero_hour_from_ticks(ticks);
+    int		new_hour  = hour_conversion[hour];
+
+    new_ticks += new_hour * ticks_per_hour;
+    new_ticks += ticks_per_day;
+
+    return new_ticks;
+}
+/**********************************************************************************************************************/
 static uint32 invert_ticks(uint32 ticks)
 {
     int		hour      = get_hour_from_ticks(ticks);
@@ -64,17 +81,41 @@ static uint32 invert_ticks(uint32 ticks)
     int		new_hour  = hour_inverse[hour];
 
     new_ticks += new_hour * ticks_per_hour;
+    new_ticks -= ticks_per_day;
 
     return new_ticks;
 }
 /**********************************************************************************************************************/
 static bool blocks_are_contiguous(uint32 previous, uint32 current)
 {
-    int const	threshold = 20;
+    int64 const	threshold     = 20;
+    int64	previous_long = previous;
+    int64	current_long  = current;
 
-    return (abs(current - previous) < threshold);
+    return (labs(current_long - previous_long) < threshold);
+}
+/**********************************************************************************************************************/
+static int64 broken_ticks_difference(uint32 previous, uint32 current, int64 threshold)
+{
+    int64	previous_long = get_partial_hour_from_ticks(previous);
+    int64	current_long  = get_partial_hour_from_ticks(current);
+    int64	difference    = current_long - previous_long;
 
-    return false;
+    if (labs(difference) < threshold)
+	return difference;
+
+    if (labs(difference - ticks_per_hour) < threshold)
+	return difference - ticks_per_hour;
+
+    return difference + ticks_per_hour;
+}
+/**********************************************************************************************************************/
+static bool broken_blocks_are_contiguous(uint32 previous, uint32 current)
+{
+    int64 const	threshold     = 20;
+    int64	difference    = broken_ticks_difference(previous, current, threshold);
+
+    return (labs(difference) < threshold);
 }
 /**********************************************************************************************************************/
 Sequence::Sequence(off_t offset) :
@@ -92,7 +133,7 @@ Error Sequence::add_block(Block *block, ProcessBlockCallback callback)
 
     CheckAssertB(block->type() == Block::data);
 
-    CheckB(_start == uint32(-1) || blocks_are_contiguous(_stop, ticks));
+    CheckB((_start == uint32(-1)) || blocks_are_contiguous(_stop, ticks));
 
     callback(block);
 
@@ -111,12 +152,7 @@ Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
 
     CheckAssertB(block->type() == Block::data_broken_rtc);
 
-    {
-	uint32	cleaned_stop  = get_partial_hour_from_ticks(_stop);
-	uint32	cleaned_ticks = get_partial_hour_from_ticks(ticks);
-
-	CheckB(_start == uint32(-1) || blocks_are_contiguous(cleaned_stop, cleaned_ticks));
-    }
+    CheckB((_start == uint32(-1)) || broken_blocks_are_contiguous(_stop, ticks));
 
     if (_scanning)
     {
@@ -129,10 +165,32 @@ Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
 
 	if (invertable)
 	{
-	    printf("Done scanning after %d blocks at %d. (%d)\n", _blocks.count(), ticks, hour);
+	    uint32	inverse = invert_ticks(ticks);
 
+	    _stop     = inverse + 200;
 	    _scanning = false;
 
+	    /*
+	     * Work backwards through the scanned blocks fixing their timestamps.
+	     */
+	    for (uint i = _blocks.count(); i > 0; --i)
+	    {
+		int64	difference = broken_ticks_difference(inverse, _blocks[i - 1]->ticks(), 20);
+
+		inverse -= difference;
+
+		CheckB(convert_ticks(inverse) == _blocks[i - 1]->ticks());
+
+		_blocks[i - 1]->ticks(inverse);
+
+		_start = inverse;
+
+		inverse -= 200;
+	    }
+
+	    /*
+	     * And then run through them in order handing them back to the caller and freeing them.
+	     */
 	    for (uint i = 0; i < _blocks.count(); ++i)
 	    {
 		callback(_blocks[i]);
@@ -143,13 +201,18 @@ Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
     }
     else
     {
+	int64	difference = broken_ticks_difference(_stop, ticks, 20);
+	uint32	inverse    = _stop + difference;
+
+	CheckB(convert_ticks(inverse) == block->ticks());
+
+	block->ticks(inverse);
+
 	callback(block);
+
+	_stop = inverse + 200;
     }
 
-    if (_start == uint32(-1))
-	_start = ticks;
-
-    _stop    = ticks + 200;
     _length += 512;
 
     return success;
