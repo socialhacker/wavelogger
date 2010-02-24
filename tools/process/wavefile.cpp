@@ -55,6 +55,9 @@ Error Wavefile::read(Path path, Sequence::ProcessBlockCallback callback)
 
     Check(match(Block::invalid));
 
+    while (_block->type() == Block::empty)
+	Check(match(Block::empty));
+
     while (_block->type() != Block::eof)
 	Check(read_sequence());
 
