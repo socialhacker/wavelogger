@@ -184,11 +184,19 @@ Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
 	     */
 	    for (uint i = _blocks.count(); i > 0; --i)
 	    {
-		int64	difference = broken_ticks_difference(inverse, _blocks[i - 1]->ticks(), 20);
+		Block	*block     = _blocks[i - 1];
+		int64	difference = broken_ticks_difference(inverse, block->ticks(), 20);
 
-		inverse -= difference;
+		inverse += difference;
 
-		CheckB(convert_ticks(inverse) == _blocks[i - 1]->ticks());
+		CheckStringB(convert_ticks(inverse) == block->ticks(),
+			     "convert_ticks(inverse:%llu):%llu != block[%d]->ticks():%llu @ 0x%08lx (%lld)",
+			     inverse,
+			     convert_ticks(inverse),
+			     i,
+			     block->ticks(),
+			     block->offset(),
+			     difference);
 
 		_blocks[i - 1]->ticks(inverse);
 
