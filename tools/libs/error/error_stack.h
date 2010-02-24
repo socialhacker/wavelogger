@@ -89,21 +89,21 @@ namespace Err
 		    const char *file_name,
 		    uint line_number,
 		    const char *optional_string,
-		    ...);
+		    ...) __attribute__ ((format (printf, 7, 8)));
 	    Element(int error,
 		    const char *function,
 		    const char *contents,
 		    const char *file_name,
 		    uint line_number,
 		    const char *optional_string,
-		    ...);
+		    ...) __attribute__ ((format (printf, 7, 8)));
 	    Element(bool error,
 		    const char *function,
 		    const char *contents,
 		    const char *file_name,
 		    uint line_number,
 		    const char *optional_string,
-		    ...);
+		    ...) __attribute__ ((format (printf, 7, 8)));
 	    Element();
 	    ~Element();
 
