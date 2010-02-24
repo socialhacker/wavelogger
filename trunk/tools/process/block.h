@@ -87,7 +87,7 @@ private:
 
     off_t	_offset;
     Type	_type;
-    uint32	_ticks;
+    uint64	_ticks;
     uint	_reference_count;
 
     /*
@@ -101,8 +101,8 @@ public:
     Error  read(int file);
     off_t  offset();
     Type   type();
-    uint32 ticks();
-    void   ticks(uint32 ticks);
+    uint64 ticks();
+    void   ticks(uint64 ticks);
     uint16 sample(int tick, int channel);
     uint8  battery();
     uint8  temperature();

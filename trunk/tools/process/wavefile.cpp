@@ -74,7 +74,7 @@ Error Wavefile::read_sequence()
 
     Check(match(Block::header));
 
-    printf("Reading sequence at 0x%08llx (0x%08x)\n", (int64)offset, _block->ticks());
+    printf("Reading sequence at 0x%08llx (%llu)\n", (int64)offset, _block->ticks());
 
     Sequence *	sequence = new Sequence(offset);
 

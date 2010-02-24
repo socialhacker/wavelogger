@@ -23,6 +23,11 @@ using namespace Err;
 using namespace Data;
 using namespace Files;
 
+static const uint64	ticks_per_second = 100;
+static const uint64	ticks_per_minute = ticks_per_second * 60;
+static const uint64	ticks_per_hour   = ticks_per_minute * 60;
+static const uint64	ticks_per_day    = ticks_per_hour   * 24;
+
 /**********************************************************************************************************************/
 Block::Block() :
     _offset(0),
@@ -80,7 +85,17 @@ Error Block::read(int file)
 
     if (_type == data ||
 	_type == data_broken_rtc)
-	_ticks = _data.rtc_ticks;
+    {
+	uint	years = (((_data.rtc_years & 0xf0) >> 4) * 10 +
+			 ((_data.rtc_years & 0x0f)));
+
+	/*
+	 * Make sure we account for leap years, they happen every four years, and 2000 was one.
+	 */
+	uint32	days = (365 * years) + (years >> 2) + 1;
+
+	_ticks = _data.rtc_ticks + days * ticks_per_day;
+    }
 
     return success;
 }
@@ -95,12 +110,12 @@ Block::Type Block::type()
     return _type;
 }
 /**********************************************************************************************************************/
-uint32 Block::ticks()
+uint64 Block::ticks()
 {
     return _ticks;
 }
 /**********************************************************************************************************************/
-void Block::ticks(uint32 ticks)
+void Block::ticks(uint64 ticks)
 {
     _ticks = ticks;
 }

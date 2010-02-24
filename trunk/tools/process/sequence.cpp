@@ -23,50 +23,59 @@ using namespace Err;
 using namespace Data;
 
 /**********************************************************************************************************************/
-static const uint8	hour_conversion[24] = {11,  0,  1,  2,  3,  4,
-					        5,  6,  7,  8,  9, 10,
-					       11, 12, 13, 14, 15, 16,
-					       17, 18, 11,  0,  1,  2};
+static const uint8	hour_conversion[24] =
+{
+    11,  0,  1,  2,  3,  4,
+     5,  6,  7,  8,  9, 10,
+    11, 12, 13, 14, 15, 16,
+    17, 18, 11,  0,  1,  2
+};
 
-static const bool	hour_invertable[24] = {false, false, false, true,  true,  true,
-					       true,  true,  true,  true,  true,  false,
-					       true,  true,  true,  true,  true,  true,
-					       true,  false, false, false, false, false};
+static const bool	hour_invertable[24] =
+{
+    false, false, false, true,  true,  true,
+    true,  true,  true,  true,  true,  false,
+    true,  true,  true,  true,  true,  true,
+    true,  false, false, false, false, false
+};
 
-static const uint8	hour_inverse[24] = { 0,  0,  0,  4,  5,  6,  // 0x00 - 0x05
-					     7,  8,  9, 10, 11,  0,  // 0x06 - 0x0b
-					     13, 14, 15, 16, 17, 18,  // 0x0a - 0x11
-					     19,  0,  0,  0,  0,  0}; // 0x12 - 0x18
+static const uint8	hour_inverse[24] =
+{
+     0,  0,  0,  4,  5,  6,
+     7,  8,  9, 10, 11,  0,
+    13, 14, 15, 16, 17, 18,
+    19,  0,  0,  0,  0,  0
+};
 
-static const uint32	ticks_per_second = 100;
-static const uint32	ticks_per_minute = ticks_per_second * 60;
-static const uint32	ticks_per_hour   = ticks_per_minute * 60;
-static const uint32	ticks_per_day    = ticks_per_hour   * 24;
+static const uint64	ticks_per_second = 100;
+static const uint64	ticks_per_minute = ticks_per_second * 60;
+static const uint64	ticks_per_hour   = ticks_per_minute * 60;
+static const uint64	ticks_per_day    = ticks_per_hour   * 24;
 
 /**********************************************************************************************************************/
-static int get_hour_from_ticks(uint32 ticks)
+static int get_hour_from_ticks(uint64 ticks)
 {
     return (ticks / ticks_per_hour) % 24;
 }
 /**********************************************************************************************************************/
-static int get_partial_hour_from_ticks(uint32 ticks)
+static int get_partial_hour_from_ticks(uint64 ticks)
 {
     return ticks % ticks_per_hour;
 }
 /**********************************************************************************************************************/
-static uint32 zero_hour_from_ticks(uint32 ticks)
+static uint64 zero_hour_from_ticks(uint64 ticks)
 {
-    uint32	partial_hour = ticks % ticks_per_hour;
-    uint32	days         = ticks / ticks_per_day;
+    uint64	partial_hour = ticks % ticks_per_hour;
+    uint64	days         = ticks / ticks_per_day;
 
     return (days * ticks_per_day) + partial_hour;
 }
 /**********************************************************************************************************************/
-static uint32 convert_ticks(uint32 ticks)
+static uint64 convert_ticks(uint64 ticks)
 {
     int		hour      = get_hour_from_ticks(ticks);
-    int		new_ticks = zero_hour_from_ticks(ticks);
     int		new_hour  = hour_conversion[hour];
+    uint64	new_ticks = zero_hour_from_ticks(ticks);
 
     new_ticks += new_hour * ticks_per_hour;
     new_ticks += ticks_per_day;
@@ -74,11 +83,11 @@ static uint32 convert_ticks(uint32 ticks)
     return new_ticks;
 }
 /**********************************************************************************************************************/
-static uint32 invert_ticks(uint32 ticks)
+static uint64 invert_ticks(uint64 ticks)
 {
     int		hour      = get_hour_from_ticks(ticks);
-    int		new_ticks = zero_hour_from_ticks(ticks);
     int		new_hour  = hour_inverse[hour];
+    uint64	new_ticks = zero_hour_from_ticks(ticks);
 
     new_ticks += new_hour * ticks_per_hour;
     new_ticks -= ticks_per_day;
@@ -86,16 +95,16 @@ static uint32 invert_ticks(uint32 ticks)
     return new_ticks;
 }
 /**********************************************************************************************************************/
-static bool blocks_are_contiguous(uint32 previous, uint32 current)
+static bool blocks_are_contiguous(uint64 previous, uint64 current)
 {
     int64 const	threshold     = 20;
     int64	previous_long = previous;
     int64	current_long  = current;
 
-    return (labs(current_long - previous_long) < threshold);
+    return (llabs(current_long - previous_long) < threshold);
 }
 /**********************************************************************************************************************/
-static int64 broken_ticks_difference(uint32 previous, uint32 current, int64 threshold)
+static int64 broken_ticks_difference(uint64 previous, uint64 current, int64 threshold)
 {
     int64	previous_long = get_partial_hour_from_ticks(previous);
     int64	current_long  = get_partial_hour_from_ticks(current);
@@ -104,40 +113,40 @@ static int64 broken_ticks_difference(uint32 previous, uint32 current, int64 thre
     if (labs(difference) < threshold)
 	return difference;
 
-    if (labs(difference - ticks_per_hour) < threshold)
+    if (llabs(difference - ticks_per_hour) < threshold)
 	return difference - ticks_per_hour;
 
     return difference + ticks_per_hour;
 }
 /**********************************************************************************************************************/
-static bool broken_blocks_are_contiguous(uint32 previous, uint32 current)
+static bool broken_blocks_are_contiguous(uint64 previous, uint64 current)
 {
     int64 const	threshold     = 20;
     int64	difference    = broken_ticks_difference(previous, current, threshold);
 
-    return (labs(difference) < threshold);
+    return (llabs(difference) < threshold);
 }
 /**********************************************************************************************************************/
 Sequence::Sequence(off_t offset) :
     _offset(offset),
     _scanning(true),
-    _start(uint32(-1)),
-    _stop(uint32(-1)),
+    _start(uint64(-1)),
+    _stop(uint64(-1)),
     _length(0)
 {
 }
 /**********************************************************************************************************************/
 Error Sequence::add_block(Block *block, ProcessBlockCallback callback)
 {
-    uint32	ticks = block->ticks();
+    uint64	ticks = block->ticks();
 
     CheckAssertB(block->type() == Block::data);
 
-    CheckB((_start == uint32(-1)) || blocks_are_contiguous(_stop, ticks));
+    CheckB((_start == uint64(-1)) || blocks_are_contiguous(_stop, ticks));
 
     callback(block);
 
-    if (_start == uint32(-1))
+    if (_start == uint64(-1))
 	_start = ticks;
 
     _stop    = ticks + 200;
@@ -148,11 +157,11 @@ Error Sequence::add_block(Block *block, ProcessBlockCallback callback)
 /**********************************************************************************************************************/
 Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
 {
-    uint32	ticks = block->ticks();
+    uint64	ticks = block->ticks();
 
     CheckAssertB(block->type() == Block::data_broken_rtc);
 
-    CheckB((_start == uint32(-1)) || broken_blocks_are_contiguous(_stop, ticks));
+    CheckB((_start == uint64(-1)) || broken_blocks_are_contiguous(_stop, ticks));
 
     if (_scanning)
     {
@@ -165,7 +174,7 @@ Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
 
 	if (invertable)
 	{
-	    uint32	inverse = invert_ticks(ticks);
+	    uint64	inverse = invert_ticks(ticks);
 
 	    _stop     = inverse + 200;
 	    _scanning = false;
@@ -202,9 +211,14 @@ Error Sequence::add_broken_block(Block *block, ProcessBlockCallback callback)
     else
     {
 	int64	difference = broken_ticks_difference(_stop, ticks, 20);
-	uint32	inverse    = _stop + difference;
+	uint64	inverse    = _stop + difference;
 
-	CheckB(convert_ticks(inverse) == block->ticks());
+	CheckStringB(convert_ticks(inverse) == block->ticks(),
+		     "convert_ticks(inverse:%llu):%llu != block->ticks():%llu @ 0x%08lx",
+		     inverse,
+		     convert_ticks(inverse),
+		     block->ticks(),
+		     block->offset());
 
 	block->ticks(inverse);
 
@@ -247,8 +261,8 @@ void Sequence::debug_print(int indent)
 
     printf("%*sSequence\n",                indent, "");
     printf("%*s    offset...: 0x%08llx\n", indent, "", (int64)_offset);
-    printf("%*s    start....: %d : %s",    indent, "", _start, ctime(&start));
-    printf("%*s    stop.....: %d : %s",    indent, "", _stop,  ctime(&stop));
+    printf("%*s    start....: %llu : %s",  indent, "", _start, ctime(&start));
+    printf("%*s    stop.....: %llu : %s",  indent, "", _stop,  ctime(&stop));
     printf("%*s    hours....: %0.2f\n",    indent, "", hours);
 }
 /**********************************************************************************************************************/

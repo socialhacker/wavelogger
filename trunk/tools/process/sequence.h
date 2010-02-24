@@ -37,8 +37,8 @@ private:
 
     off_t			_offset;
     bool			_scanning;
-    uint32			_start;
-    uint32			_stop;
+    uint64			_start;
+    uint64			_stop;
     uint32			_length;
     Data::Array<Block *>	_blocks;
 
